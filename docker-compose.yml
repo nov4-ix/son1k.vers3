@@ -1,0 +1,22 @@
+version: "3.9"
+services:
+  api:
+    build: .
+    container_name: son1k_api
+    env_file:
+      - ./src/.env
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./:/app
+  web:
+    build: ./frontend
+    container_name: son1k_web
+    environment:
+      - VITE_API_URL=http://localhost:8000
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/usr/src/app
+    depends_on:
+      - api
