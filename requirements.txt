@@ -1,0 +1,30 @@
+# === CORE BACKEND STACK ===
+fastapi
+uvicorn[standard]
+sqlalchemy
+pydantic
+pydantic-settings
+python-jose[cryptography]
+passlib[bcrypt]
+pytest
+
+# === AUDIO STACK ===
+torch==2.2.2
+torchaudio==2.2.2
+transformers>=4.37
+accelerate
+sentencepiece
+soundfile
+einops
+ffmpeg-python
+
+# === AUDIO ANALYSIS & PROCESSING ===
+numpy
+scipy
+librosa
+pyloudnorm
+pyrubberband
+
+# === UTILITIES ===
+python-multipart
+aiofiles
