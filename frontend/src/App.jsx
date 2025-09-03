@@ -95,14 +95,10 @@ export default function App() {
   // Theme
   const [darkMode, setDarkMode] = useLocalStorage('darkMode', false);
   
-  // Auth state (simplified for this demo)
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  
   // UI state
   const [health, setHealth] = useState(null);
   const [toast, setToast] = useState(null);
-  const [activeTab, setActiveTab] = useState('maqueta'); // 'maqueta' | 'ghost' | 'manual'
+  const [activeTab, setActiveTab] = useState('maqueta');
   
   // Loading states
   const [loading, setLoading] = useState({
@@ -126,6 +122,10 @@ export default function App() {
   const [maquetaProcessing, setMaquetaProcessing] = useState(false);
   const [maquetaDuration, setMaquetaDuration] = useState(12);
   const [showAdvancedParams, setShowAdvancedParams] = useState(false);
+  
+  // File upload improvements
+  const [dragOver, setDragOver] = useState(false);
+  const [audioPreview, setAudioPreview] = useState(null);
   
   // Advanced processing parameters
   const [procParams, setProcParams] = useState({
@@ -155,6 +155,161 @@ export default function App() {
   const setLoadingState = (key, value) => {
     setLoading(prev => ({ ...prev, [key]: value }));
   };
+
+  // File validation
+  const validateFile = (file) => {
+    const maxSize = 100 * 1024 * 1024; // 100MB
+    const allowedTypes = ['audio/wav', 'audio/mpeg', 'audio/flac', 'audio/x-aiff', 'audio/mp4'];
+    const allowedExtensions = ['.wav', '.mp3', '.flac', '.aiff', '.m4a'];
+    
+    if (file.size > maxSize) {
+      return 'File too large. Maximum size is 100MB';
+    }
+    
+    const extension = '.' + file.name.split('.').pop().toLowerCase();
+    if (!allowedExtensions.includes(extension) && !allowedTypes.includes(file.type)) {
+      return 'Unsupported format. Use WAV, MP3, FLAC, AIFF, or M4A';
+    }
+    
+    return null;
+  };
+
+  // File selection handler
+  const handleFileSelect = (file) => {
+    if (!file) return;
+    
+    const error = validateFile(file);
+    if (error) {
+      showToast(error, 'error');
+      return;
+    }
+    
+    setMaquetaFile(file);
+    
+    // Create audio preview URL
+    const previewUrl = URL.createObjectURL(file);
+    setAudioPreview(previewUrl);
+    
+    showToast(`File selected: ${file.name}`, 'success');
+  };
+
+  // Drag & drop handlers
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    setDragOver(true);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    setDragOver(false);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setDragOver(false);
+    
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+      handleFileSelect(files[0]);
+    }
+  };
+
+  // CRITICAL FIX: processMaqueta function
+  const processMaqueta = async () => {
+    if (!maquetaFile) {
+      showToast('Please select a file first', 'error');
+      return;
+    }
+    
+    if (!maquetaPrompt.trim()) {
+      showToast('Please describe your vision', 'error');
+      return;
+    }
+
+    // Additional validation
+    const error = validateFile(maquetaFile);
+    if (error) {
+      showToast(error, 'error');
+      return;
+    }
+
+    setMaquetaProcessing(true);
+    setMaquetaResult(null);
+    
+    // Create AbortController for timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 180000); // 3 minutes timeout
+    
+    try {
+      // Prepare FormData
+      const formData = new FormData();
+      formData.append('file', maquetaFile);
+      formData.append('prompt', maquetaPrompt.trim());
+      formData.append('duration', maquetaDuration.toString());
+      
+      // Add advanced parameters
+      Object.entries(procParams).forEach(([key, value]) => {
+        formData.append(key, value.toString());
+      });
+
+      // Show progress toast
+      showToast('Uploading file and starting analysis...', 'info');
+
+      // Make API call with timeout
+      const response = await fetch(`${API}/api/v1/ghost/maqueta`, {
+        method: 'POST',
+        body: formData,
+        signal: controller.signal
+      });
+
+      clearTimeout(timeoutId);
+      
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.detail || `Server error: ${response.status}`);
+      }
+
+      if (!data.ok) {
+        throw new Error(data.message || 'Processing failed');
+      }
+
+      // Success
+      setMaquetaResult(data);
+      showToast('Production complete! Check the A/B comparison below.', 'success');
+
+    } catch (error) {
+      clearTimeout(timeoutId);
+      console.error('Maqueta processing error:', error);
+      
+      // Better error messages
+      let errorMessage = 'Processing failed: ';
+      if (error.name === 'AbortError') {
+        errorMessage += 'Request timed out after 3 minutes. Try with a shorter audio file.';
+      } else if (error.name === 'TypeError' && error.message.includes('fetch')) {
+        errorMessage += 'Cannot connect to server. Please check if the API is running.';
+      } else if (error.message.includes('413')) {
+        errorMessage += 'File too large for server.';
+      } else if (error.message.includes('415')) {
+        errorMessage += 'Unsupported file format.';
+      } else {
+        errorMessage += error.message;
+      }
+      
+      showToast(errorMessage, 'error');
+    } finally {
+      setMaquetaProcessing(false);
+    }
+  };
+
+  // Cleanup function for preview URL
+  useEffect(() => {
+    return () => {
+      if (audioPreview) {
+        URL.revokeObjectURL(audioPreview);
+      }
+    };
+  }, [audioPreview]);
 
   // Load presets on mount
   useEffect(() => {
@@ -199,7 +354,6 @@ export default function App() {
       if (res.ok) {
         setJobs(data.jobs);
         
-        // Auto-enable polling if there are running jobs
         const hasRunningJobs = data.jobs.some(job => job.status === 'running' || job.status === 'queued');
         setJobsPolling(hasRunningJobs);
       }
@@ -268,7 +422,7 @@ export default function App() {
       const data = await res.json();
       if (res.ok) {
         setGUrl(`${API}${data.url}`);
-        showToast('Music generated successfully! 🎶', 'success');
+        showToast('Music generated successfully!', 'success');
       } else {
         throw new Error(data.detail || 'Generation failed');
       }
@@ -346,7 +500,7 @@ export default function App() {
               fontSize: '28px',
               fontWeight: 700
             }}>
-              🎵 Son1k Studio v3.0
+              Son1k Studio v3.0
             </h1>
             
             <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
@@ -382,7 +536,7 @@ export default function App() {
             border: `1px solid ${themeColors.border}`
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-              <h2 style={{ margin: 0, fontSize: '20px' }}>🔍 System Health</h2>
+              <h2 style={{ margin: 0, fontSize: '20px' }}>System Health</h2>
               <button 
                 onClick={checkHealth}
                 disabled={loading.health}
@@ -436,7 +590,7 @@ export default function App() {
                   cursor: 'pointer'
                 }}
               >
-                🎤 Maqueta → Production
+                Maqueta → Production
               </button>
               <button
                 onClick={() => setActiveTab('ghost')}
@@ -450,7 +604,7 @@ export default function App() {
                   cursor: 'pointer'
                 }}
               >
-                🤖 Ghost Studio
+                Ghost Studio
               </button>
               <button
                 onClick={() => setActiveTab('manual')}
@@ -464,7 +618,7 @@ export default function App() {
                   cursor: 'pointer'
                 }}
               >
-                🎛️ Manual Generation
+                Manual Generation
               </button>
             </div>
 
@@ -473,7 +627,7 @@ export default function App() {
               {activeTab === 'maqueta' && (
                 <div>
                   <h3 style={{ margin: '0 0 20px 0', fontSize: '18px' }}>
-                    🎤 Demo → Professional Production
+                    Demo → Professional Production
                   </h3>
                   
                   <div style={{ marginBottom: 24 }}>
@@ -482,33 +636,96 @@ export default function App() {
                     </p>
                   </div>
 
-                  {/* File Upload */}
+                  {/* Improved File Upload with Drag & Drop */}
                   <div style={{ marginBottom: 20 }}>
                     <label style={{ display: 'block', marginBottom: 8, fontWeight: 600 }}>
-                      Upload Demo (WAV, MP3, FLAC):
+                      Upload Demo (WAV, MP3, FLAC, AIFF, M4A):
                     </label>
-                    <input
-                      type="file"
-                      accept=".wav,.mp3,.flac,.aiff,.m4a"
-                      onChange={(e) => setMaquetaFile(e.target.files[0])}
+                    
+                    <div
+                      onDragOver={handleDragOver}
+                      onDragLeave={handleDragLeave}
+                      onDrop={handleDrop}
+                      onClick={() => document.getElementById('audio-file-input').click()}
                       style={{
                         width: '100%',
-                        padding: '12px',
-                        border: `2px dashed ${themeColors.border}`,
-                        borderRadius: 8,
-                        background: themeColors.cardBg,
+                        padding: '24px',
+                        border: `2px dashed ${dragOver ? themeColors.primary : themeColors.border}`,
+                        borderRadius: 12,
+                        background: dragOver ? (darkMode ? '#1e3a8a20' : '#dbeafe') : themeColors.cardBg,
                         color: themeColors.text,
-                        cursor: 'pointer'
+                        cursor: 'pointer',
+                        textAlign: 'center',
+                        transition: 'all 0.2s ease'
                       }}
-                    />
-                    {maquetaFile && (
-                      <div style={{ 
-                        marginTop: 8, 
-                        fontSize: '12px', 
-                        color: themeColors.success,
-                        fontWeight: 600
+                    >
+                      <input
+                        id="audio-file-input"
+                        type="file"
+                        accept=".wav,.mp3,.flac,.aiff,.m4a,audio/*"
+                        onChange={(e) => handleFileSelect(e.target.files[0])}
+                        style={{ display: 'none' }}
+                      />
+                      
+                      {!maquetaFile ? (
+                        <div>
+                          <div style={{ fontSize: '32px', marginBottom: 8 }}>🎵</div>
+                          <div style={{ fontWeight: 600, marginBottom: 4 }}>
+                            {dragOver ? 'Drop your audio file here' : 'Click or drag audio file here'}
+                          </div>
+                          <div style={{ fontSize: '14px', color: themeColors.textSecondary }}>
+                            WAV, MP3, FLAC, AIFF, M4A (max 100MB)
+                          </div>
+                        </div>
+                      ) : (
+                        <div>
+                          <div style={{ fontSize: '24px', marginBottom: 8, color: themeColors.success }}>✓</div>
+                          <div style={{ fontWeight: 600, marginBottom: 4 }}>
+                            {maquetaFile.name}
+                          </div>
+                          <div style={{ fontSize: '12px', color: themeColors.textSecondary, marginBottom: 8 }}>
+                            {(maquetaFile.size / 1024 / 1024).toFixed(1)}MB
+                          </div>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setMaquetaFile(null);
+                              setAudioPreview(null);
+                            }}
+                            style={{
+                              background: themeColors.danger,
+                              color: 'white',
+                              border: 'none',
+                              padding: '4px 12px',
+                              borderRadius: 4,
+                              fontSize: '12px',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                    
+                    {/* Audio Preview */}
+                    {audioPreview && (
+                      <div style={{
+                        marginTop: 12,
+                        padding: 12,
+                        background: darkMode ? '#374151' : '#f9fafb',
+                        borderRadius: 6,
+                        border: `1px solid ${themeColors.border}`
                       }}>
-                        📎 {maquetaFile.name} ({(maquetaFile.size / 1024 / 1024).toFixed(1)}MB)
+                        <div style={{ fontSize: '14px', fontWeight: 600, marginBottom: 8 }}>
+                          Preview:
+                        </div>
+                        <audio 
+                          src={audioPreview} 
+                          controls 
+                          style={{ width: '100%' }}
+                          preload="metadata"
+                        />
                       </div>
                     )}
                   </div>
@@ -590,7 +807,7 @@ export default function App() {
                       border: `1px solid ${themeColors.border}`
                     }}>
                       <h4 style={{ margin: '0 0 12px 0', fontSize: '14px', color: themeColors.primary }}>
-                        🎛️ Processing Parameters
+                        Processing Parameters
                       </h4>
                       
                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 12 }}>
@@ -675,7 +892,7 @@ export default function App() {
                     </div>
                   )}
 
-                  {/* Process Button */}
+                  {/* Process Button with Enhanced Loading */}
                   <button
                     onClick={processMaqueta}
                     disabled={maquetaProcessing || !maquetaFile || !maquetaPrompt.trim()}
@@ -693,10 +910,24 @@ export default function App() {
                         ? 'not-allowed' : 'pointer',
                       marginBottom: 32,
                       width: '100%',
-                      maxWidth: '300px'
+                      maxWidth: '300px',
+                      position: 'relative',
+                      overflow: 'hidden'
                     }}
                   >
-                    {maquetaProcessing ? "🎵 Processing... This may take 30-60s" : "🚀 Generate Production"}
+                    {maquetaProcessing && (
+                      <div style={{
+                        position: 'absolute',
+                        left: 0,
+                        top: 0,
+                        height: '100%',
+                        background: 'rgba(255,255,255,0.2)',
+                        width: '0%',
+                        animation: 'progress 180s linear',
+                        borderRadius: '8px'
+                      }} />
+                    )}
+                    {maquetaProcessing ? "Processing... This may take up to 3 minutes" : "Generate Production"}
                   </button>
 
                   {/* Results Panel A/B */}
@@ -709,7 +940,7 @@ export default function App() {
                       marginTop: 20
                     }}>
                       <h3 style={{ margin: '0 0 20px 0', color: themeColors.primary }}>
-                        🎉 Production Complete - A/B Comparison
+                        Production Complete - A/B Comparison
                       </h3>
 
                       {/* Analysis Summary */}
@@ -723,9 +954,9 @@ export default function App() {
                           <strong>Analysis Results:</strong>
                           {maquetaResult.demo?.analysis && (
                             <div style={{ marginTop: 8 }}>
-                              <span>🎵 Tempo: {maquetaResult.demo.analysis.tempo?.bpm?.toFixed(1)} BPM</span>
-                              <span style={{ marginLeft: 16 }}>🎼 Key: {maquetaResult.demo.analysis.key_guess?.root}{maquetaResult.demo.analysis.key_guess?.scale}</span>
-                              <span style={{ marginLeft: 16 }}>🎤 Vocals: {maquetaResult.demo.analysis.vocals?.has_vocals ? 'Detected' : 'None'}</span>
+                              <span>Tempo: {maquetaResult.demo.analysis.tempo?.bpm?.toFixed(1)} BPM</span>
+                              <span style={{ marginLeft: 16 }}>Key: {maquetaResult.demo.analysis.key_guess?.root}{maquetaResult.demo.analysis.key_guess?.scale}</span>
+                              <span style={{ marginLeft: 16 }}>Vocals: {maquetaResult.demo.analysis.vocals?.has_vocals ? 'Detected' : 'None'}</span>
                             </div>
                           )}
                         </div>
@@ -750,7 +981,7 @@ export default function App() {
                           border: `2px solid ${themeColors.warning}`
                         }}>
                           <h4 style={{ margin: '0 0 12px 0', fontSize: '16px', color: themeColors.warning }}>
-                            🎤 A: Original Demo
+                            A: Original Demo
                           </h4>
                           <audio 
                             src={`${API}${maquetaResult.demo.url}`} 
@@ -770,7 +1001,7 @@ export default function App() {
                           border: `2px solid ${themeColors.success}`
                         }}>
                           <h4 style={{ margin: '0 0 12px 0', fontSize: '16px', color: themeColors.success }}>
-                            🎵 B: AI Production
+                            B: AI Production
                           </h4>
                           <audio 
                             src={`${API}${maquetaResult.production.url}`} 
@@ -808,7 +1039,7 @@ export default function App() {
               {activeTab === 'ghost' && (
                 <div>
                   <h3 style={{ margin: '0 0 20px 0', fontSize: '18px' }}>
-                    🤖 Automated Music Generation
+                    Automated Music Generation
                   </h3>
                   
                   {/* Preset Selection */}
@@ -856,9 +1087,9 @@ export default function App() {
                         <strong>Base prompt:</strong> {presets[selectedPreset].prompt_base}
                       </p>
                       <div style={{ marginTop: 8, fontSize: '12px', color: themeColors.textSecondary }}>
-                        <span>🎵 {presets[selectedPreset].suggested_bpm} BPM</span>
-                        <span style={{ marginLeft: 16 }}>⏱️ {presets[selectedPreset].suggested_duration}s</span>
-                        <span style={{ marginLeft: 16 }}>🏷️ {presets[selectedPreset].tags?.join(', ')}</span>
+                        <span>{presets[selectedPreset].suggested_bpm} BPM</span>
+                        <span style={{ marginLeft: 16 }}>{presets[selectedPreset].suggested_duration}s</span>
+                        <span style={{ marginLeft: 16 }}>{presets[selectedPreset].tags?.join(', ')}</span>
                       </div>
                     </div>
                   )}
@@ -901,7 +1132,7 @@ export default function App() {
                       marginBottom: 32
                     }}
                   >
-                    🚀 Create Ghost Job
+                    Create Ghost Job
                   </button>
 
                   {/* Jobs List */}
@@ -912,7 +1143,7 @@ export default function App() {
                       alignItems: 'center',
                       marginBottom: 16 
                     }}>
-                      <h4 style={{ margin: 0, fontSize: '16px' }}>📋 Recent Jobs</h4>
+                      <h4 style={{ margin: 0, fontSize: '16px' }}>Recent Jobs</h4>
                       <button
                         onClick={loadJobs}
                         disabled={loading.jobs}
@@ -926,7 +1157,7 @@ export default function App() {
                           cursor: 'pointer'
                         }}
                       >
-                        {loading.jobs ? "Refreshing..." : "🔄 Refresh"}
+                        {loading.jobs ? "Refreshing..." : "Refresh"}
                       </button>
                     </div>
 
@@ -999,7 +1230,7 @@ export default function App() {
               {activeTab === 'manual' && (
                 <div>
                   <h3 style={{ margin: '0 0 20px 0', fontSize: '18px' }}>
-                    🎛️ Manual Music Generation
+                    Manual Music Generation
                   </h3>
                   
                   {/* Main Prompt */}
@@ -1153,7 +1384,7 @@ export default function App() {
                       marginBottom: 20
                     }}
                   >
-                    {loading.generate ? "🎵 Generating..." : "🚀 Generate Music"}
+                    {loading.generate ? "Generating..." : "Generate Music"}
                   </button>
 
                   {/* Generated Audio */}
@@ -1164,7 +1395,7 @@ export default function App() {
                       borderRadius: 12,
                       border: `1px solid ${themeColors.border}`
                     }}>
-                      <h4 style={{ margin: '0 0 12px 0' }}>🎶 Generated Music</h4>
+                      <h4 style={{ margin: '0 0 12px 0' }}>Generated Music</h4>
                       <audio 
                         src={gUrl} 
                         controls 
@@ -1178,6 +1409,14 @@ export default function App() {
           </div>
         </div>
       </div>
+
+      {/* CSS for progress animation */}
+      <style jsx>{`
+        @keyframes progress {
+          from { width: 0%; }
+          to { width: 100%; }
+        }
+      `}</style>
     </>
   );
 }
