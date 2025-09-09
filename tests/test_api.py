@@ -17,6 +17,20 @@ API_BASE = "http://localhost:8000"
 OUTPUT_DIR = Path("output")
 UPLOADS_DIR = Path("uploads")
 
+
+def is_api_available():
+    """Return True if the API server responds, else False."""
+    try:
+        requests.get(f"{API_BASE}/health", timeout=1)
+        return True
+    except requests.RequestException:
+        return False
+
+
+pytestmark = pytest.mark.skipif(
+    not is_api_available(), reason="API server not available on localhost:8000"
+)
+
 def generate_test_audio(duration_s=2.0, sample_rate=44100, frequency=440.0):
     """Generate a simple sine wave for testing"""
     t = np.linspace(0, duration_s, int(sample_rate * duration_s), False)
