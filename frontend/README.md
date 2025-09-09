@@ -4,7 +4,7 @@
 ```bash
 npm install
 npm run dev
-# http://localhost:5173
+# http://localhost:3000
 ```
 Create `.env` from `.env.example` to point to your API.
 

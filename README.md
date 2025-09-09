@@ -48,7 +48,7 @@ make dev-all
 
 That's it! 🎉
 
-- **Frontend**: http://localhost:5173
+- **Frontend**: http://localhost:3000
 - **API**: http://localhost:8000
 - **API Docs**: http://localhost:8000/docs
 
@@ -155,7 +155,7 @@ ACCESS_TOKEN_EXPIRE_MINUTES=30
 DATABASE_URL=sqlite:///./son1k.db
 
 # CORS
-BACKEND_CORS_ORIGINS=http://localhost:5173
+BACKEND_CORS_ORIGINS=http://localhost:3000
 
 # App
 APP_NAME=Son1k API

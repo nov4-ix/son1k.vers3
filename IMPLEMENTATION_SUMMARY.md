@@ -171,7 +171,7 @@ python -c "import librosa, pyloudnorm; print('✅ Audio libs OK')"
 # Iniciar con nueva funcionalidad
 make dev-all
 
-# Frontend: http://localhost:5173 (nueva tab "Maqueta → Production")  
+# Frontend: http://localhost:3000 (nueva tab "Maqueta → Production")
 # API: http://localhost:8000 (nuevos endpoints /ghost/maqueta)
 ```
 
@@ -230,7 +230,7 @@ print(f'LUFS gain: {meta[\"lufs_gain_db\"]:.1f}dB')
 ```
 
 ### **4. Frontend A/B Interface**
-- **Navegar a**: http://localhost:5173  
+- **Navegar a**: http://localhost:3000
 - **Tab**: "🎤 Maqueta → Production"
 - **Upload**: Cualquier archivo de audio
 - **Prompt**: "transform into electronic dance music"  
@@ -299,7 +299,7 @@ print(f'LUFS gain: {meta[\"lufs_gain_db\"]:.1f}dB')
 make setup && make dev-all
 ```
 
-**👉 http://localhost:5173 → Tab "🎤 Maqueta → Production"**
+**👉 http://localhost:3000 → Tab "🎤 Maqueta → Production"**
 
 **🎵 ¡Sube tu primera maqueta y obtén una producción profesional en 60 segundos!**
 

@@ -3,4 +3,4 @@ services:
   api:
     command: uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload
   web:
-    command: npm run dev -- --host 0.0.0.0
+    command: npm run dev -- --host 0.0.0.0 --port 3000
