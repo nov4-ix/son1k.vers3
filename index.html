@@ -1,12 +1,1307 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Son1k Frontend</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
-  </body>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Son1kVers3 - Resistencia Sonora</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #0066cc;
+            --primary-dark: #0052a3;
+            --secondary: #ff6b35;
+            --background: #0a0a0a;
+            --card-bg: #1a1a1a;
+            --border: #333;
+            --text: #ffffff;
+            --text-muted: #999;
+            --success: #10b981;
+            --error: #ef4444;
+            --warning: #f59e0b;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--background);
+            color: var(--text);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
+        }
+
+        .header {
+            padding: 1rem 2rem;
+            border-bottom: 1px solid var(--border);
+            background: rgba(26, 26, 26, 0.8);
+            backdrop-filter: blur(10px);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.875rem;
+            color: var(--text-muted);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--success);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .tab-container {
+            margin-bottom: 2rem;
+        }
+
+        .tab-list {
+            display: flex;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 2rem;
+            overflow-x: auto;
+        }
+
+        .tab-button {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            padding: 1rem 1.5rem;
+            cursor: pointer;
+            font-size: 0.875rem;
+            font-weight: 500;
+            white-space: nowrap;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s ease;
+        }
+
+        .tab-button:hover {
+            color: var(--text);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .tab-button.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+
+        .tab-button:focus {
+            outline: 2px solid var(--primary);
+            outline-offset: 2px;
+        }
+
+        .tab-panel {
+            display: none;
+        }
+
+        .tab-panel.active {
+            display: block;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .card-header {
+            margin-bottom: 1.5rem;
+        }
+
+        .card-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .card-description {
+            color: var(--text-muted);
+            font-size: 0.875rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            color: var(--text);
+        }
+
+        .form-input, .form-select, .form-textarea {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text);
+            font-size: 0.875rem;
+            transition: all 0.2s ease;
+        }
+
+        .form-input:focus, .form-select:focus, .form-textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .form-textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            min-height: 44px;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: var(--primary-dark);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .audio-container {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1rem;
+            margin: 1rem 0;
+        }
+
+        .audio-player {
+            width: 100%;
+            height: 40px;
+            background: var(--card-bg);
+            border-radius: 4px;
+        }
+
+        .knob-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 1rem;
+        }
+
+        .knob {
+            position: relative;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #2a2a2a, #1a1a1a);
+            border: 2px solid var(--border);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            touch-action: none;
+        }
+
+        .knob:hover {
+            border-color: var(--primary);
+            box-shadow: 0 0 20px rgba(0, 102, 204, 0.3);
+        }
+
+        .knob:focus {
+            outline: 2px solid var(--primary);
+            outline-offset: 2px;
+        }
+
+        .knob-indicator {
+            position: absolute;
+            top: 3px;
+            left: 50%;
+            width: 3px;
+            height: 20px;
+            background: var(--primary);
+            border-radius: 2px;
+            transform-origin: center 27px;
+            transform: translateX(-50%) rotate(-135deg);
+            transition: transform 0.1s ease;
+        }
+
+        .knob-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 0.5rem;
+            text-align: center;
+        }
+
+        .knob-value {
+            font-size: 0.625rem;
+            color: var(--primary);
+            margin-top: 0.25rem;
+        }
+
+        .controls-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1.5rem;
+        }
+
+        .control-section {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1rem;
+        }
+
+        .control-section-title {
+            font-size: 0.875rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: var(--text);
+        }
+
+        .knobs-row {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+        }
+
+        .progress-container {
+            margin: 1.5rem 0;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            pointer-events: none;
+        }
+
+        .toast {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-left: 4px solid var(--primary);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 0.5rem;
+            min-width: 300px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            pointer-events: auto;
+            animation: slideIn 0.3s ease;
+        }
+
+        .toast.success {
+            border-left-color: var(--success);
+        }
+
+        .toast.error {
+            border-left-color: var(--error);
+        }
+
+        .toast.warning {
+            border-left-color: var(--warning);
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .toast-title {
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .toast-message {
+            color: var(--text-muted);
+            font-size: 0.875rem;
+        }
+
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+
+        .spinner {
+            width: 32px;
+            height: 32px;
+            border: 3px solid var(--border);
+            border-top: 3px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .results-container {
+            margin-top: 2rem;
+        }
+
+        .result-card {
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .result-title {
+            font-weight: 600;
+            color: var(--success);
+        }
+
+        .result-metadata {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 4px;
+            padding: 0.75rem;
+            margin-top: 1rem;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+
+            .header-content {
+                padding: 0 1rem;
+            }
+
+            .controls-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .knobs-row {
+                flex-wrap: wrap;
+                gap: 1rem;
+            }
+
+            .toast {
+                min-width: auto;
+                width: calc(100vw - 40px);
+            }
+        }
+
+        @media (prefers-contrast: high) {
+            :root {
+                --border: #666;
+                --text-muted: #ccc;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header-content">
+            <div class="logo" role="banner">Son1kVers3</div>
+            <div class="status-indicator">
+                <div class="status-dot" aria-hidden="true"></div>
+                <span>Resistencia Sonora Activa</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="container">
+        <div class="tab-container">
+            <div class="tab-list" role="tablist" aria-label="Herramientas principales">
+                <button class="tab-button active" role="tab" aria-selected="true" aria-controls="maqueta-panel" id="maqueta-tab" tabindex="0">
+                    Maqueta → Production
+                </button>
+                <button class="tab-button" role="tab" aria-selected="false" aria-controls="generation-panel" id="generation-tab" tabindex="-1">
+                    Generación Musical
+                </button>
+                <button class="tab-button" role="tab" aria-selected="false" aria-controls="ghost-panel" id="ghost-tab" tabindex="-1">
+                    Ghost Studio
+                </button>
+                <button class="tab-button" role="tab" aria-selected="false" aria-controls="history-panel" id="history-tab" tabindex="-1">
+                    Historial
+                </button>
+            </div>
+
+            <!-- Maqueta → Production Tab -->
+            <div class="tab-panel active" role="tabpanel" id="maqueta-panel" aria-labelledby="maqueta-tab">
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">Transformar Maqueta a Producción</h2>
+                        <p class="card-description">
+                            Sube tu demo y nuestro sistema de IA analizará la clave, tempo, estructura y 
+                            generará una producción profesional con el procesamiento que necesitas.
+                        </p>
+                    </div>
+
+                    <form id="maqueta-form">
+                        <div class="form-group">
+                            <label for="audio-file" class="form-label">Archivo de Audio</label>
+                            <input type="file" id="audio-file" class="form-input" accept="audio/*" required 
+                                   aria-describedby="audio-help">
+                            <small id="audio-help" style="color: var(--text-muted); font-size: 0.75rem;">
+                                Formatos soportados: MP3, WAV, FLAC, M4A (máx. 10MB)
+                            </small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="production-style" class="form-label">Estilo de Producción</label>
+                            <select id="production-style" class="form-select">
+                                <option value="auto">Detección Automática</option>
+                                <option value="pop">Pop Moderno</option>
+                                <option value="rock">Rock/Alternative</option>
+                                <option value="electronic">Electronic/EDM</option>
+                                <option value="latin">Latino/Regional</option>
+                                <option value="acoustic">Acústico/Folk</option>
+                                <option value="hiphop">Hip-Hop/Trap</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="intensity" class="form-label">Intensidad de Procesamiento</label>
+                            <div class="knob-container">
+                                <div class="knob" role="slider" aria-valuenow="50" aria-valuemin="0" aria-valuemax="100" 
+                                     aria-label="Intensidad de procesamiento" tabindex="0" id="intensity-knob">
+                                    <div class="knob-indicator"></div>
+                                </div>
+                                <div class="knob-label">Intensidad</div>
+                                <div class="knob-value" id="intensity-value">50%</div>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary" id="process-btn">
+                            <span>Procesar Maqueta</span>
+                        </button>
+                    </form>
+
+                    <div class="progress-container" id="progress-container" style="display: none;">
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="progress-fill"></div>
+                        </div>
+                        <p id="progress-text">Iniciando análisis...</p>
+                    </div>
+
+                    <div class="results-container" id="results-container" style="display: none;">
+                        <!-- Results will be populated here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Music Generation Tab -->
+            <div class="tab-panel" role="tabpanel" id="generation-panel" aria-labelledby="generation-tab">
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">Generación Musical con IA</h2>
+                        <p class="card-description">
+                            Crea música original desde cero usando prompts textuales y controles expresivos.
+                        </p>
+                    </div>
+
+                    <form id="generation-form">
+                        <div class="form-group">
+                            <label for="prompt" class="form-label">Prompt Musical</label>
+                            <textarea id="prompt" class="form-textarea" placeholder="Ej: Una balada pop en Do mayor con guitarra acústica y piano, tempo lento, melancólica pero esperanzadora..." required></textarea>
+                        </div>
+
+                        <div class="controls-grid">
+                            <div class="control-section">
+                                <h3 class="control-section-title">Parámetros Básicos</h3>
+                                <div class="knobs-row">
+                                    <div class="knob-container">
+                                        <div class="knob" role="slider" aria-valuenow="120" aria-valuemin="60" aria-valuemax="200" 
+                                             aria-label="Tempo BPM" tabindex="0" id="tempo-knob">
+                                            <div class="knob-indicator"></div>
+                                        </div>
+                                        <div class="knob-label">Tempo</div>
+                                        <div class="knob-value" id="tempo-value">120 BPM</div>
+                                    </div>
+                                    <div class="knob-container">
+                                        <div class="knob" role="slider" aria-valuenow="30" aria-valuemin="10" aria-valuemax="300" 
+                                             aria-label="Duración en segundos" tabindex="0" id="duration-knob">
+                                            <div class="knob-indicator"></div>
+                                        </div>
+                                        <div class="knob-label">Duración</div>
+                                        <div class="knob-value" id="duration-value">30s</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="control-section">
+                                <h3 class="control-section-title">Expresividad</h3>
+                                <div class="knobs-row">
+                                    <div class="knob-container">
+                                        <div class="knob" role="slider" aria-valuenow="70" aria-valuemin="0" aria-valuemax="100" 
+                                             aria-label="Creatividad" tabindex="0" id="creativity-knob">
+                                            <div class="knob-indicator"></div>
+                                        </div>
+                                        <div class="knob-label">Creatividad</div>
+                                        <div class="knob-value" id="creativity-value">70%</div>
+                                    </div>
+                                    <div class="knob-container">
+                                        <div class="knob" role="slider" aria-valuenow="50" aria-valuemin="0" aria-valuemax="100" 
+                                             aria-label="Variación" tabindex="0" id="variation-knob">
+                                            <div class="knob-indicator"></div>
+                                        </div>
+                                        <div class="knob-label">Variación</div>
+                                        <div class="knob-value" id="variation-value">50%</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary" id="generate-btn">
+                            <span>Generar Música</span>
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Ghost Studio Tab -->
+            <div class="tab-panel" role="tabpanel" id="ghost-panel" aria-labelledby="ghost-tab">
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">Ghost Studio</h2>
+                        <p class="card-description">
+                            Procesos en background y configuración avanzada del sistema.
+                        </p>
+                    </div>
+
+                    <div id="ghost-content">
+                        <div class="loading">
+                            <div class="spinner"></div>
+                            <span style="margin-left: 1rem;">Cargando Ghost Studio...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- History Tab -->
+            <div class="tab-panel" role="tabpanel" id="history-panel" aria-labelledby="history-tab">
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">Historial de Creaciones</h2>
+                        <p class="card-description">
+                            Revisa y reutiliza tus creaciones anteriores.
+                        </p>
+                    </div>
+
+                    <div id="history-content">
+                        <p style="color: var(--text-muted);">No hay creaciones en el historial aún.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div class="toast-container" id="toast-container" aria-live="polite" aria-atomic="true">
+        <!-- Toasts will be inserted here -->
+    </div>
+
+    <audio id="audio-player" preload="none" style="display: none;"></audio>
+
+    <script>
+        // Global state
+        let currentTab = 'maqueta-panel';
+        let audioPlayer = null;
+        let processingJob = null;
+
+        // API Configuration
+        const API_BASE = 'http://localhost:8000';
+
+        // Initialize app
+        document.addEventListener('DOMContentLoaded', function() {
+            initTabs();
+            initKnobs();
+            initForms();
+            initAudio();
+            showToast('Son1kVers3 iniciado', 'Resistencia Sonora activa', 'success');
+        });
+
+        // Tab System
+        function initTabs() {
+            const tabButtons = document.querySelectorAll('.tab-button');
+            
+            tabButtons.forEach((button, index) => {
+                button.addEventListener('click', () => switchTab(button, index));
+                button.addEventListener('keydown', handleTabKeydown);
+            });
+        }
+
+        function switchTab(button, index) {
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                btn.classList.remove('active');
+                btn.setAttribute('aria-selected', 'false');
+                btn.setAttribute('tabindex', '-1');
+            });
+
+            button.classList.add('active');
+            button.setAttribute('aria-selected', 'true');
+            button.setAttribute('tabindex', '0');
+
+            document.querySelectorAll('.tab-panel').forEach(panel => {
+                panel.classList.remove('active');
+            });
+
+            const targetPanel = button.getAttribute('aria-controls');
+            document.getElementById(targetPanel).classList.add('active');
+            currentTab = targetPanel;
+
+            if (targetPanel === 'ghost-panel') {
+                loadGhostStudio();
+            } else if (targetPanel === 'history-panel') {
+                loadHistory();
+            }
+        }
+
+        function handleTabKeydown(event) {
+            const tabs = document.querySelectorAll('.tab-button');
+            const currentIndex = Array.from(tabs).indexOf(event.target);
+
+            let targetIndex;
+                targetIndex = currentIndex === 0 ? tabs.length - 1 : currentIndex - 1;
+                event.preventDefault();
+            } else if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
+                targetIndex = currentIndex === tabs.length - 1 ? 0 : currentIndex + 1;
+                event.preventDefault();
+            } else if (event.key === 'Home') {
+                targetIndex = 0;
+                event.preventDefault();
+            } else if (event.key === 'End') {
+                targetIndex = tabs.length - 1;
+                event.preventDefault();
+            }
+
+            if (targetIndex !== undefined) {
+                tabs[targetIndex].focus();
+                switchTab(tabs[targetIndex], targetIndex);
+            }
+        }
+
+        // Knob Controls
+        function initKnobs() {
+            const knobs = document.querySelectorAll('.knob');
+            
+            knobs.forEach(knob => {
+                let isDragging = false;
+                let startAngle = 0;
+                let startValue = parseFloat(knob.getAttribute('aria-valuenow'));
+
+                knob.addEventListener('mousedown', startDrag);
+                document.addEventListener('mousemove', drag);
+                document.addEventListener('mouseup', endDrag);
+
+                knob.addEventListener('touchstart', startDrag, { passive: false });
+                document.addEventListener('touchmove', drag, { passive: false });
+                document.addEventListener('touchend', endDrag);
+
+                knob.addEventListener('keydown', handleKnobKeydown);
+
+                function startDrag(event) {
+                    event.preventDefault();
+                    isDragging = true;
+                    knob.focus();
+                    
+                    const rect = knob.getBoundingClientRect();
+                    const centerX = rect.left + rect.width / 2;
+                    const centerY = rect.top + rect.height / 2;
+                    
+                    const clientX = event.touches ? event.touches[0].clientX : event.clientX;
+                    const clientY = event.touches ? event.touches[0].clientY : event.clientY;
+                    
+                    startAngle = Math.atan2(clientY - centerY, clientX - centerX);
+                }
+
+                function drag(event) {
+                    if (!isDragging) return;
+                    
+                    event.preventDefault();
+                    
+                    const rect = knob.getBoundingClientRect();
+                    const centerX = rect.left + rect.width / 2;
+                    const centerY = rect.top + rect.height / 2;
+                    
+                    const clientX = event.touches ? event.touches[0].clientX : event.clientX;
+                    const clientY = event.touches ? event.touches[0].clientY : event.clientY;
+                    
+                    const currentAngle = Math.atan2(clientY - centerY, clientX - centerX);
+                    const angleDiff = currentAngle - startAngle;
+                    
+                    const min = parseFloat(knob.getAttribute('aria-valuemin'));
+                    const max = parseFloat(knob.getAttribute('aria-valuemax'));
+                    const range = max - min;
+                    
+                    let newValue = startValue + (angleDiff / (Math.PI * 1.5)) * range;
+                    newValue = Math.max(min, Math.min(max, newValue));
+                    
+                    updateKnobValue(knob, newValue);
+                }
+
+                function endDrag() {
+                    if (isDragging) {
+                        isDragging = false;
+                        startValue = parseFloat(knob.getAttribute('aria-valuenow'));
+                    }
+                }
+
+                function handleKnobKeydown(event) {
+                    const min = parseFloat(knob.getAttribute('aria-valuemin'));
+                    const max = parseFloat(knob.getAttribute('aria-valuemax'));
+                    const current = parseFloat(knob.getAttribute('aria-valuenow'));
+                    const step = (max - min) / 20;
+
+                    let newValue = current;
+
+                    switch (event.key) {
+                        case 'ArrowUp':
+                        case 'ArrowRight':
+                            newValue = Math.min(max, current + step);
+                            event.preventDefault();
+                            break;
+                        case 'ArrowDown':
+                        case 'ArrowLeft':
+                            newValue = Math.max(min, current - step);
+                            event.preventDefault();
+                            break;
+                        case 'Home':
+                            newValue = min;
+                            event.preventDefault();
+                            break;
+                        case 'End':
+                            newValue = max;
+                            event.preventDefault();
+                            break;
+                        case 'PageUp':
+                            newValue = Math.min(max, current + step * 5);
+                            event.preventDefault();
+                            break;
+                        case 'PageDown':
+                            newValue = Math.max(min, current - step * 5);
+                            event.preventDefault();
+                            break;
+                    }
+
+                    if (newValue !== current) {
+                        updateKnobValue(knob, newValue);
+                        startValue = newValue;
+                    }
+                }
+
+                updateKnobValue(knob, startValue);
+            });
+        }
+
+        function updateKnobValue(knob, value) {
+            const min = parseFloat(knob.getAttribute('aria-valuemin'));
+            const max = parseFloat(knob.getAttribute('aria-valuemax'));
+            const percentage = (value - min) / (max - min);
+            const rotation = -135 + (percentage * 270);
+
+            knob.setAttribute('aria-valuenow', value.toFixed(1));
+            
+            const indicator = knob.querySelector('.knob-indicator');
+            indicator.style.transform = `translateX(-50%) rotate(${rotation}deg)`;
+
+            const valueElement = knob.parentElement.querySelector('.knob-value');
+            if (valueElement) {
+                const id = knob.id;
+                if (id.includes('tempo')) {
+                    valueElement.textContent = `${Math.round(value)} BPM`;
+                } else if (id.includes('duration')) {
+                    valueElement.textContent = `${Math.round(value)}s`;
+                } else {
+                    valueElement.textContent = `${Math.round(value)}%`;
+                }
+            }
+        }
+
+        // Form Handling
+        function initForms() {
+            const maquetaForm = document.getElementById('maqueta-form');
+            if (maquetaForm) {
+                maquetaForm.addEventListener('submit', handleMaquetaSubmit);
+            }
+
+            const generationForm = document.getElementById('generation-form');
+            if (generationForm) {
+                generationForm.addEventListener('submit', handleGenerationSubmit);
+            }
+        }
+
+        async function handleMaquetaSubmit(event) {
+            event.preventDefault();
+            
+            const fileInput = document.getElementById('audio-file');
+            const styleSelect = document.getElementById('production-style');
+            const intensityKnob = document.getElementById('intensity-knob');
+            
+            if (!fileInput.files.length) {
+                showToast('Error', 'Por favor selecciona un archivo de audio', 'error');
+                return;
+            }
+
+            const file = fileInput.files[0];
+            const style = styleSelect.value;
+            const intensity = parseFloat(intensityKnob.getAttribute('aria-valuenow'));
+
+            showProgress('Subiendo archivo...');
+
+            try {
+                const formData = new FormData();
+                formData.append('audio_file', file);
+                formData.append('style', style);
+                formData.append('intensity', intensity);
+
+                const response = await fetch(`${API_BASE}/api/v1/maqueta/process`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Error ${response.status}: ${response.statusText}`);
+                }
+
+                const result = await response.json();
+                
+                if (result.job_id) {
+                    processingJob = result.job_id;
+                    pollJobStatus(result.job_id);
+                    showToast('Procesamiento iniciado', 'Tu maqueta está siendo analizada', 'success');
+                } else {
+                    displayMaquetaResult(result);
+                }
+
+            } catch (error) {
+                console.error('Error processing maqueta:', error);
+                showToast('Error de procesamiento', error.message, 'error');
+                hideProgress();
+            }
+        }
+
+        async function handleGenerationSubmit(event) {
+            event.preventDefault();
+            
+            const promptInput = document.getElementById('prompt');
+            const tempoKnob = document.getElementById('tempo-knob');
+            const durationKnob = document.getElementById('duration-knob');
+            const creativityKnob = document.getElementById('creativity-knob');
+            const variationKnob = document.getElementById('variation-knob');
+
+            if (!promptInput.value.trim()) {
+                showToast('Error', 'Por favor ingresa un prompt musical', 'error');
+                return;
+            }
+
+            showProgress('Generando música...');
+
+            try {
+                const payload = {
+                    prompt: promptInput.value.trim(),
+                    duration: parseInt(durationKnob.getAttribute('aria-valuenow')),
+                    temperature: 1.0,
+                    top_k: 250,
+                    apply_postprocessing: true
+                };
+
+                const response = await fetch(`${API_BASE}/api/v1/generate`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Error ${response.status}: ${response.statusText}`);
+                }
+
+                const result = await response.json();
+                hideProgress();
+                displayGenerationResult(result);
+                showToast('Generación completada', 'Tu música está lista', 'success');
+
+            } catch (error) {
+                console.error('Error generating music:', error);
+                showToast('Error de generación', error.message, 'error');
+                hideProgress();
+            }
+        }
+
+        async function pollJobStatus(jobId) {
+            const pollInterval = setInterval(async () => {
+                try {
+                    const response = await fetch(`${API_BASE}/api/v1/jobs/${jobId}/status`);
+                    
+                    if (!response.ok) {
+                        throw new Error(`Error ${response.status}: ${response.statusText}`);
+                    }
+
+                    const status = await response.json();
+                    
+                    updateProgress(status.progress || 0, status.message || 'Procesando...');
+
+                    if (status.status === 'completed') {
+                        clearInterval(pollInterval);
+                        hideProgress();
+                        displayMaquetaResult(status.result);
+                        showToast('Completado', 'El procesamiento ha terminado exitosamente', 'success');
+                        
+                    } else if (status.status === 'failed') {
+                        clearInterval(pollInterval);
+                        hideProgress();
+                        showToast('Error de procesamiento', status.error || 'El procesamiento falló', 'error');
+                    }
+
+                } catch (error) {
+                    console.error('Error polling job status:', error);
+                    clearInterval(pollInterval);
+                    hideProgress();
+                    showToast('Error de conexión', 'No se pudo verificar el estado del procesamiento', 'error');
+                }
+            }, 2000);
+        }
+
+        function showProgress(message) {
+            const container = document.getElementById('progress-container');
+            const text = document.getElementById('progress-text');
+            const fill = document.getElementById('progress-fill');
+            
+            text.textContent = message;
+            fill.style.width = '0%';
+            container.style.display = 'block';
+        }
+
+        function updateProgress(percentage, message) {
+            const text = document.getElementById('progress-text');
+            const fill = document.getElementById('progress-fill');
+            
+            text.textContent = message;
+            fill.style.width = `${percentage}%`;
+        }
+
+        function hideProgress() {
+            const container = document.getElementById('progress-container');
+            container.style.display = 'none';
+        }
+
+        function displayMaquetaResult(result) {
+            const container = document.getElementById('results-container');
+            
+            container.innerHTML = `
+                <div class="result-card">
+                    <div class="result-header">
+                        <h3 class="result-title">Producción Completada</h3>
+                        <button class="btn btn-secondary" onclick="playAudio('${result.production_url}')">
+                            ▶ Reproducir
+                        </button>
+                    </div>
+                    
+                    <div class="audio-container">
+                        <audio controls class="audio-player" preload="metadata">
+                            <source src="${result.production_url}" type="audio/mpeg">
+                            Tu navegador no soporta el elemento de audio.
+                        </audio>
+                    </div>
+
+                    <div class="result-metadata">
+                        <strong>Análisis Original:</strong><br>
+                        • Clave: ${result.analysis?.key || 'No detectada'}<br>
+                        • Tempo: ${result.analysis?.tempo || 'No detectado'} BPM<br>
+                        • Duración: ${result.analysis?.duration || 'Desconocida'}s<br>
+                        • Vocals: ${result.analysis?.has_vocals ? 'Sí' : 'No'}<br><br>
+                        
+                        <strong>Procesamiento Aplicado:</strong><br>
+                        ${result.processing?.chain?.join(' → ') || 'Procesamiento estándar'}<br><br>
+                        
+                        <strong>Tiempo de procesamiento:</strong> ${result.processing_time_s?.toFixed(1) || 'N/A'}s
+                    </div>
+                </div>
+            `;
+            
+            container.style.display = 'block';
+        }
+
+        function displayGenerationResult(result) {
+            const container = document.getElementById('results-container');
+            
+            container.innerHTML = `
+                <div class="result-card">
+                    <div class="result-header">
+                        <h3 class="result-title">Música Generada</h3>
+                        <button class="btn btn-secondary" onclick="playAudio('${result.audio_url}')">
+                            ▶ Reproducir
+                        </button>
+                    </div>
+                    
+                    <div class="audio-container">
+                        <audio controls class="audio-player" preload="metadata">
+                            <source src="${result.audio_url}" type="audio/mpeg">
+                            Tu navegador no soporta el elemento de audio.
+                        </audio>
+                    </div>
+
+                    <div class="result-metadata">
+                        <strong>Prompt:</strong> ${result.prompt}<br>
+                        <strong>Parámetros:</strong><br>
+                        • Duración: ${result.duration}s<br>
+                        • Procesamiento: ${result.processing_chain?.join(' → ') || 'Básico'}<br><br>
+                        
+                        <strong>Tiempo de generación:</strong> ${result.generation_time?.toFixed(1) || 'N/A'}s
+                    </div>
+                </div>
+            `;
+            
+            container.style.display = 'block';
+        }
+
+        function initAudio() {
+            audioPlayer = document.getElementById('audio-player');
+        }
+
+        function playAudio(url) {
+            if (audioPlayer) {
+                audioPlayer.src = url;
+                audioPlayer.play().catch(error => {
+                    console.error('Error playing audio:', error);
+                    showToast('Error de reproducción', 'No se pudo reproducir el audio', 'error');
+                });
+            }
+        }
+
+        async function loadGhostStudio() {
+            const content = document.getElementById('ghost-content');
+            
+            try {
+                const response = await fetch(`${API_BASE}/api/v1/ghost/status`);
+                
+                if (!response.ok) {
+                    throw new Error('Ghost Studio no disponible');
+                }
+
+                const data = await response.json();
+                
+                content.innerHTML = `
+                    <div class="control-section">
+                        <h3 class="control-section-title">Estado del Sistema</h3>
+                        <p><strong>Workers activos:</strong> ${data.active_workers || 0}</p>
+                        <p><strong>Jobs completados:</strong> ${data.completed_jobs || 0}</p>
+                        <p><strong>Jobs fallidos:</strong> ${data.failed_jobs || 0}</p>
+                        <p><strong>Última actividad:</strong> ${data.last_activity || 'N/A'}</p>
+                    </div>
+                    
+                    <div class="control-section">
+                        <h3 class="control-section-title">Configuración</h3>
+                        <button class="btn btn-secondary" onclick="clearCache()">Limpiar Caché</button>
+                        <button class="btn btn-secondary" onclick="restartWorkers()">Reiniciar Workers</button>
+                    </div>
+                `;
+
+            } catch (error) {
+                content.innerHTML = `
+                    <div style="color: var(--text-muted);">
+                        <p>Ghost Studio no está disponible actualmente.</p>
+                        <p style="font-size: 0.875rem;">Error: ${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        async function loadHistory() {
+            const content = document.getElementById('history-content');
+            
+            try {
+                const response = await fetch(`${API_BASE}/api/v1/history`);
+                
+                if (!response.ok) {
+                    throw new Error('No se pudo cargar el historial');
+                }
+
+                const history = await response.json();
+                
+                if (history.length === 0) {
+                    content.innerHTML = '<p style="color: var(--text-muted);">No hay creaciones en el historial aún.</p>';
+                    return;
+                }
+
+                content.innerHTML = history.map(item => `
+                    <div class="result-card">
+                        <div class="result-header">
+                            <h4>${item.type === 'maqueta' ? 'Maqueta Procesada' : 'Música Generada'}</h4>
+                            <small>${new Date(item.created_at).toLocaleString()}</small>
+                        </div>
+                        <button class="btn btn-secondary" onclick="playAudio('${item.audio_url}')">
+                            ▶ Reproducir
+                        </button>
+                    </div>
+                `).join('');
+
+            } catch (error) {
+                content.innerHTML = `
+                    <p style="color: var(--text-muted);">Error cargando historial: ${error.message}</p>
+                `;
+            }
+        }
+
+        function showToast(title, message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            
+            toast.className = `toast ${type}`;
+            toast.innerHTML = `
+                <div class="toast-title">${title}</div>
+                <div class="toast-message">${message}</div>
+            `;
+            
+            container.appendChild(toast);
+            
+            setTimeout(() => {
+                if (container.contains(toast)) {
+                    container.removeChild(toast);
+                }
+            }, 4000);
+        }
+
+        async function clearCache() {
+            try {
+                const response = await fetch(`${API_BASE}/api/v1/ghost/clear-cache`, { method: 'POST' });
+                if (response.ok) {
+                    showToast('Caché limpiado', 'El caché ha sido limpiado exitosamente', 'success');
+                    loadGhostStudio();
+                } else {
+                    throw new Error('Error limpiando caché');
+                }
+            } catch (error) {
+                showToast('Error', error.message, 'error');
+            }
+        }
+
+        async function restartWorkers() {
+            try {
+                const response = await fetch(`${API_BASE}/api/v1/ghost/restart-workers`, { method: 'POST' });
+                if (response.ok) {
+                    showToast('Workers reiniciados', 'Los workers han sido reiniciados', 'success');
+                    loadGhostStudio();
+                } else {
+                    throw new Error('Error reiniciando workers');
+                }
+            } catch (error) {
+                showToast('Error', error.message, 'error');
+            }
+        }
+    </script>
+</body>
 </html>

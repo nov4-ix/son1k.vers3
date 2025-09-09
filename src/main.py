@@ -764,4 +764,229 @@ async def get_history():
     return history_storage[-20:]  # Últimos 20
 
 @app.delete("/api/v1/history/{item_id}")
-async def delete_history_item(
+async def delete_history_item(item_id: str):
+    """Eliminar elemento del historial"""
+    global history_storage
+    initial_count = len(history_storage)
+    history_storage = [item for item in history_storage if item["id"] != item_id]
+    
+    if len(history_storage) < initial_count:
+        return {"message": "Elemento eliminado del historial", "deleted": True}
+    else:
+        raise HTTPException(status_code=404, detail="Elemento no encontrado")
+
+# === GHOST STUDIO ===
+@app.get("/api/v1/ghost/status")
+async def ghost_status():
+    """Estado de Ghost Studio"""
+    active_jobs = [job for job in job_storage.values() if job.status == "processing"]
+    completed_jobs = [job for job in job_storage.values() if job.status == "completed"]
+    failed_jobs = [job for job in job_storage.values() if job.status == "failed"]
+    
+    return {
+        "active_workers": len(active_jobs),
+        "pending_jobs": 0,  # No tenemos cola separada
+        "completed_jobs": len(completed_jobs),
+        "failed_jobs": len(failed_jobs),
+        "total_jobs": len(job_storage),
+        "last_activity": max([job.created_at for job in job_storage.values()]).isoformat() if job_storage else None,
+        "system_status": "active",
+        "capabilities": {
+            "audio_analysis": AUDIO_MODULES_AVAILABLE,
+            "professional_processing": AUDIO_MODULES_AVAILABLE,
+            "music_generation": musicgen_service.is_loaded()
+        }
+    }
+
+@app.post("/api/v1/ghost/clear-cache")
+async def clear_cache():
+    """Limpiar caché del sistema"""
+    global job_storage, history_storage
+    
+    # Mantener solo jobs activos
+    active_jobs = {k: v for k, v in job_storage.items() if v.status == "processing"}
+    removed_jobs = len(job_storage) - len(active_jobs)
+    job_storage = active_jobs
+    
+    # Limpiar archivos temporales antiguos
+    temp_files_removed = 0
+    try:
+        for temp_dir in [settings.storage_paths["uploads"], Path(tempfile.gettempdir()) / "son1kvers3"]:
+            if temp_dir.exists():
+                for file_path in temp_dir.glob("*"):
+                    if file_path.is_file():
+                        # Eliminar archivos de más de 1 hora
+                        file_age = time.time() - file_path.stat().st_mtime
+                        if file_age > 3600:  # 1 hora
+                            file_path.unlink()
+                            temp_files_removed += 1
+    except Exception as e:
+        logger.warning(f"Error limpiando archivos temporales: {e}")
+    
+    return {
+        "message": "Caché limpiado exitosamente",
+        "removed_jobs": removed_jobs,
+        "active_jobs": len(job_storage),
+        "temp_files_removed": temp_files_removed
+    }
+
+@app.post("/api/v1/ghost/restart-workers")
+async def restart_workers():
+    """Reiniciar workers del sistema"""
+    try:
+        # Reiniciar servicio de generación musical
+        await musicgen_service.load_model()
+        
+        # Reinicializar módulos de audio si están disponibles
+        global audio_analyzer, audio_processor
+        if AUDIO_MODULES_AVAILABLE:
+            audio_analyzer = AudioAnalyzer(sample_rate=settings.SAMPLE_RATE)
+            audio_processor = AudioPostProcessor(sample_rate=settings.SAMPLE_RATE)
+        
+        return {
+            "message": "Workers reiniciados exitosamente",
+            "status": "ok",
+            "model_loaded": musicgen_service.is_loaded(),
+            "audio_modules": AUDIO_MODULES_AVAILABLE
+        }
+    except Exception as e:
+        logger.error(f"Error reiniciando workers: {e}")
+        raise HTTPException(status_code=500, detail=f"Error reiniciando workers: {str(e)}")
+
+# === ENDPOINTS ADICIONALES ===
+@app.get("/api/v1/presets")
+async def get_presets():
+    """Obtener presets de estilos musicales"""
+    presets = {
+        "auto": {
+            "name": "Detección Automática",
+            "description": "Análisis automático del estilo basado en el audio",
+            "suggested_intensity": 50
+        },
+        "pop": {
+            "name": "Pop Moderno",
+            "description": "Producción pop comercial con brillo y punch",
+            "suggested_intensity": 70
+        },
+        "rock": {
+            "name": "Rock/Alternative",
+            "description": "Sonido rock con distorsión y energía",
+            "suggested_intensity": 80
+        },
+        "electronic": {
+            "name": "Electronic/EDM",
+            "description": "Música electrónica con síntesis y efectos",
+            "suggested_intensity": 60
+        },
+        "latin": {
+            "name": "Latino/Regional",
+            "description": "Estilos latinos con instrumentación tradicional",
+            "suggested_intensity": 65
+        },
+        "acoustic": {
+            "name": "Acústico/Folk",
+            "description": "Sonido natural con instrumentos acústicos",
+            "suggested_intensity": 40
+        },
+        "hiphop": {
+            "name": "Hip-Hop/Trap",
+            "description": "Beats urbanos con graves profundos",
+            "suggested_intensity": 75
+        }
+    }
+    
+    return {"presets": presets, "count": len(presets)}
+
+@app.get("/api/v1/stats")
+async def get_stats():
+    """Estadísticas del sistema"""
+    total_jobs = len(job_storage)
+    completed_jobs = len([job for job in job_storage.values() if job.status == "completed"])
+    failed_jobs = len([job for job in job_storage.values() if job.status == "failed"])
+    
+    # Estadísticas de historial
+    maqueta_count = len([item for item in history_storage if item["type"] == "maqueta"])
+    generation_count = len([item for item in history_storage if item["type"] == "generation"])
+    
+    # Estadísticas de archivos
+    try:
+        output_files = list(settings.storage_paths["output"].glob("*.wav"))
+        total_output_size = sum(f.stat().st_size for f in output_files if f.is_file())
+        total_output_size_mb = total_output_size / (1024 * 1024)
+    except Exception:
+        total_output_size_mb = 0
+    
+    return {
+        "jobs": {
+            "total": total_jobs,
+            "completed": completed_jobs,
+            "failed": failed_jobs,
+            "success_rate": (completed_jobs / total_jobs * 100) if total_jobs > 0 else 0
+        },
+        "creations": {
+            "total": len(history_storage),
+            "maquetas": maqueta_count,
+            "generations": generation_count
+        },
+        "storage": {
+            "output_files": len(output_files) if 'output_files' in locals() else 0,
+            "total_size_mb": round(total_output_size_mb, 2)
+        },
+        "system": {
+            "uptime_info": "Disponible en /health",
+            "audio_modules": AUDIO_MODULES_AVAILABLE,
+            "model_loaded": musicgen_service.is_loaded()
+        }
+    }
+
+# === MANEJO DE ERRORES ===
+@app.exception_handler(404)
+async def not_found_handler(request, exc):
+    return JSONResponse(
+        status_code=404,
+        content={
+            "detail": "Endpoint no encontrado",
+            "path": str(request.url.path),
+            "available_endpoints": [
+                "/health",
+                "/docs", 
+                "/api/v1/maqueta/process",
+                "/api/v1/generate",
+                "/api/v1/history",
+                "/api/v1/ghost/status"
+            ]
+        }
+    )
+
+@app.exception_handler(500)
+async def internal_error_handler(request, exc):
+    logger.error(f"Internal error: {exc}")
+    return JSONResponse(
+        status_code=500,
+        content={
+            "detail": "Error interno del servidor",
+            "timestamp": datetime.now().isoformat(),
+            "support": "Revisa los logs para más detalles"
+        }
+    )
+
+@app.exception_handler(422)
+async def validation_error_handler(request, exc):
+    return JSONResponse(
+        status_code=422,
+        content={
+            "detail": "Error de validación en los datos enviados",
+            "errors": exc.detail if hasattr(exc, 'detail') else str(exc),
+            "help": "Revisa la documentación en /docs"
+        }
+    )
+
+# === EJECUTAR ===
+if __name__ == "__main__":
+    uvicorn.run(
+        "src.main:app",
+        host="0.0.0.0",
+        port=8000,
+        reload=True,
+        log_level="info"
+    )
