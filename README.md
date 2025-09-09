@@ -1,481 +1,336 @@
-# 🎵 Son1k v3.0 - AI Music Generation Platform
+# Son1kVers3 - Resistencia Sonora
 
-Production-ready AI music generation platform using MusicGen with FastAPI backend and React frontend.
+**Plataforma de creación musical con IA que democratiza la producción musical para 400+ millones de hispanohablantes.**
 
-![Son1k](https://img.shields.io/badge/Son1k-v3.0-blue) ![Python](https://img.shields.io/badge/Python-3.11-green) ![FastAPI](https://img.shields.io/badge/FastAPI-Latest-teal) ![React](https://img.shields.io/badge/React-18-blue)
+> "Lo imperfecto también es sagrado" - Manifiesto Son1k
 
-## ✨ Features
+## Características Principales
 
-- 🎤 **Maqueta → Production**: Upload demos and get professional AI productions  
-- 📊 **Advanced Audio Analysis**: Tempo, key, energy, vocal detection
-- 🎛️ **Professional Postprocessing**: SSL EQ, Melodyne-like tuning, Neve saturation, mastering
-- 🔄 **A/B Comparison**: Side-by-side demo vs production playback
-- 🤖 **Ghost Studio**: Automated music generation with presets and job queue
-- 🎛️ **Manual Generation**: Full control over MusicGen parameters
-- 🎵 **High Quality Audio**: Professional postprocessing with normalization and limiting
-- 🔐 **JWT Authentication**: Secure user management
-- 🎨 **Modern UI**: React frontend with dark/light modes
-- 📱 **Responsive Design**: Works on desktop and mobile
-- 🐳 **Docker Support**: Easy deployment with containers
-- 🧪 **Comprehensive Tests**: Smoke tests and integration testing
+- **Maqueta → Production**: Analiza demos y genera producciones profesionales
+- **Generación Musical**: Crea música original desde prompts textuales
+- **Análisis Profesional**: Detección de clave, tempo, estructura vocal
+- **Post-procesamiento**: SSL EQ, Neve saturation, LUFS mastering
+- **Interfaz Accesible**: Frontend HTML moderno con soporte completo ARIA
+- **API REST**: FastAPI con documentación interactiva
 
-## 🚀 Quick Start
+## Arquitectura
 
-### Prerequisites
+```
+son1k-fusion/
+├── src/
+│   ├── main.py              # API principal integrada
+│   ├── audio_analysis.py    # Motor de análisis profesional
+│   └── audio_post.py        # Post-procesamiento SSL/Neve
+├── frontend/
+│   └── index.html           # Interfaz HTML moderna
+├── storage/
+│   ├── uploads/             # Archivos subidos
+│   └── output/              # Producciones generadas
+├── requirements.txt         # Dependencias Python
+├── Makefile                # Comandos de ejecución
+└── README.md               # Esta documentación
+```
 
-- **macOS** with Homebrew (tested, other OS should work)
-- **Python 3.11**
-- **Node.js 18+**
-- **ffmpeg**: `brew install ffmpeg`
-- **rubberband** (optional, for better pitch shifting): `brew install rubberband`
+## Instalación Rápida
 
-### Setup & Run
-
+### Opción 1: Inicio Rápido (Recomendado)
 ```bash
-# Clone repository
-git clone <your-repo>
-cd son1k
+cd son1k-fusion/
+make quickstart
+```
 
-# One-time setup (creates venv, installs deps, creates folders)
+### Opción 2: Paso a Paso
+```bash
+# 1. Configurar directorios
 make setup
 
-# Install additional tools
-make install-deps
+# 2. Instalar dependencias
+make install
 
-# Start development servers (API + Frontend)
-make dev-all
+# 3. Ejecutar servidor
+make dev
 ```
 
-That's it! 🎉
+## Dependencias
 
-- **Frontend**: http://localhost:5173
-- **API**: http://localhost:8000
-- **API Docs**: http://localhost:8000/docs
+### Obligatorias
+- **FastAPI** - API REST moderna
+- **NumPy** - Procesamiento numérico
+- **SoundFile** - Lectura/escritura de audio
 
-## 🎮 Usage
+### Opcionales (con graceful fallback)
+- **Librosa** - Análisis avanzado de audio
+- **SciPy** - Procesamiento de señales
+- **PyLoudnorm** - Normalización LUFS
+- **PyRubberBand** - Corrección de pitch
 
-### Maqueta → Production (NEW! 🎤)
+## Uso
 
-The revolutionary new workflow that transforms your demos into professional productions:
-
-1. **Upload Demo**: Drop any audio file (WAV, MP3, FLAC, etc.)
-2. **Describe Vision**: Tell the AI how you want it to sound ("make it a polished pop anthem", "give it jazz fusion vibes", etc.)
-3. **AI Analysis**: System analyzes tempo, key, energy, vocal presence automatically
-4. **AI Generation**: MusicGen creates new music using analysis + your vision
-5. **Professional Processing**: Applies SSL EQ, pitch correction, Neve saturation, mastering chain
-6. **A/B Compare**: Listen to original demo vs AI production side-by-side
-
-**Processing Chain Applied:**
-- **Analysis**: Tempo detection, key detection, energy/structure analysis, vocal detection
-- **Generation**: MusicGen with context-aware prompts
-- **SSL EQ**: 4-band parametric EQ (low shelf, 2 peak mids, high shelf, HPF)
-- **Tuning**: Melodyne-like pitch correction (if vocals detected)
-- **Neve Saturation**: Console-style harmonic enhancement with oversampling
-- **Mastering**: LUFS normalization, brick-wall limiting, fade in/out
-
-### Ghost Studio (Automated)
-
-1. **Select Preset**: Choose from pre-configured music styles
-2. **Add Instructions**: Optional customization prompts
-3. **Create Job**: Automatic generation with job queue
-4. **Monitor Progress**: Real-time job status updates
-5. **Play Results**: Stream generated music
-
-### Manual Generation
-
-1. **Describe Music**: Write detailed text prompt
-2. **Adjust Parameters**: Duration, temperature, top-k, top-p, seed
-3. **Generate**: Direct MusicGen generation
-4. **Download**: Access WAV files in `/output`
-
-## 🏗️ Architecture
-
+### 1. Servidor de Desarrollo
+```bash
+make dev
 ```
-son1k/
-├── src/                    # Backend (FastAPI)
-│   ├── main.py            # FastAPI app with CORS & static files
-│   ├── generate.py        # MusicGen integration
-│   ├── audio_post.py      # Professional audio postprocessing (SSL, Neve, mastering)
-│   ├── audio_analysis.py  # Audio analysis (tempo, key, energy, vocals)
-│   ├── ghost_api.py       # Ghost Studio API (presets + maqueta workflow)
-│   └── auth/              # JWT authentication
-├── ghost-studio/          # Ghost Studio MVP
-│   ├── presets.json       # Music style presets
-│   ├── jobs.json          # Job queue storage
-│   └── ghost_api.py       # Ghost Studio API
-├── frontend/              # React + Vite frontend
-│   └── src/App.jsx        # Main UI with tabs (Maqueta, Ghost, Manual)
-├── uploads/               # Uploaded demo files
-│   └── ghost/            # Maqueta sessions
-├── output/                # Generated audio files
-│   └── ghost/            # Production outputs
-└── tests/                 # Smoke tests (including maqueta workflow)
+- Servidor en `http://localhost:8000`
+- Documentación en `http://localhost:8000/docs`
+- Recarga automática activada
+
+### 2. Servidor de Producción
+```bash
+make prod
 ```
 
-## 🎵 Audio Pipeline
+### 3. Endpoints Principales
 
-### Maqueta → Production Pipeline
-1. **Upload**: Demo file (WAV/MP3/FLAC) → `uploads/ghost/{session_id}/`
-2. **Analysis**: 
-   - Tempo detection (librosa beat tracking)
-   - Key detection (chroma + Krumhansl-Schmuckler algorithm)
-   - Energy curve analysis & structure detection
-   - Vocal presence detection (spectral + MFCC features)
-3. **AI Prompt Construction**: Analysis context + user vision → final prompt
-4. **Generation**: MusicGen (facebook/musicgen-small) with enhanced prompt
-5. **Professional Postprocessing**:
-   - **SSL EQ**: Low shelf (+1.5dB@80Hz), Mid cuts (-1dB@400Hz), High shelf (+1dB@8kHz), HPF@20Hz
-   - **Pitch Correction**: Melodyne-like tuning using detected key (if vocals present)
-   - **Neve Saturation**: Console modeling with 4x oversampling, harmonic enhancement
-   - **Mastering**: LUFS normalization (-14dB), brick-wall limiter (-0.3dB), fade in/out
-6. **Output**: Production WAV → `output/ghost/{session_id}/production.wav`
+#### Procesar Maqueta
+```http
+POST /api/v1/maqueta/process
+Content-Type: multipart/form-data
 
-### Standard Generation Pipeline  
-1. **Generation**: MusicGen (facebook/musicgen-small)
-2. **Basic Postprocessing**:
-   - RMS Normalization to -14 LUFS
-   - Fade in (50ms) / Fade out (200ms)
-   - Soft limiting to -0.3dBFS
-3. **Output**: 32kHz mono WAV files
-4. **Serving**: Static files via FastAPI
+audio_file: archivo.wav
+style: "pop" | "rock" | "electronic" | "auto"
+intensity: 0.0-100.0
+```
 
-## 🎛️ Configuration
+#### Generar Música
+```http
+POST /api/v1/generate
+Content-Type: multipart/form-data
 
-### Environment Variables
+prompt: "descripción musical"
+duration: 12.0
+tempo: 120
+creativity: 70.0
+variation: 50.0
+```
 
-Copy `backend.env.example` to `src/.env`:
+#### Estado de Job
+```http
+GET /api/v1/jobs/{job_id}/status
+```
+
+#### Historial
+```http
+GET /api/v1/history
+```
+
+## Funcionalidades Técnicas
+
+### Análisis de Audio
+- **Detección de tempo** usando beat tracking y onset detection
+- **Detección de clave** con correlación cromática Krumhansl-Schmuckler
+- **Análisis espectral** (centroide, brillo, bandwidth)
+- **Detección vocal** usando MFCCs y análisis armónico/percusivo
+- **Estructura energética** con percentiles dinámicos
+
+### Post-procesamiento Profesional
+- **SSL EQ**: 4 bandas paramétricas + high-pass
+- **Neve Saturation**: Saturación asimétrica con armónicos
+- **LUFS Mastering**: Normalización según estándares broadcast
+- **Limitador**: Brick-wall con lookahead
+- **Fades**: Entrada/salida con curvas cuadráticas
+
+### Generación Musical
+- **Motor MusicGen**: Síntesis de audio realista
+- **Prompts inteligentes**: Construcción automática basada en análisis
+- **Post-procesamiento**: Cadena completa de masterización
+
+## Comandos Make
 
 ```bash
-# Security
-SECRET_KEY=your-secret-key
-ALGORITHM=HS256
-ACCESS_TOKEN_EXPIRE_MINUTES=30
+# Instalación
+make install        # Dependencias básicas
+make install-full   # Con dependencias opcionales
+make setup          # Configurar directorios
 
-# Database  
-DATABASE_URL=sqlite:///./son1k.db
+# Ejecución
+make dev           # Desarrollo (recomendado)
+make prod          # Producción
+make backend       # Solo API
+make frontend      # Solo HTML
 
-# CORS
-BACKEND_CORS_ORIGINS=http://localhost:5173
-
-# App
-APP_NAME=Son1k API
-APP_DEBUG=true
+# Utilidades
+make test          # Probar conectividad
+make status        # Estado del sistema
+make docs          # Abrir documentación
+make clean         # Limpiar temporales
+make help          # Ver ayuda completa
 ```
 
-### Frontend Environment
+## Estructura de Respuestas
 
-Create `frontend/.env`:
-
-```bash
-VITE_API_URL=http://localhost:8000
-```
-
-## 🧪 Testing
-
-```bash
-# All tests
-make test
-
-# Smoke tests only
-make test-smoke
-
-# Individual test
-python -m pytest tests/test_api.py::test_health -v
-```
-
-### Test Coverage
-
-- ✅ Health check endpoint
-- ✅ Music generation (2s sample)
-- ✅ Ghost Studio workflow (preset → job → completion)
-- ✅ Static file serving
-- ✅ Models endpoint
-- ✅ Cache management
-
-## 📊 Performance
-
-### Model Memory Usage
-
-| Model | Parameters | Memory | Generation Speed |
-|-------|------------|--------|------------------|
-| Small | 300M | ~2GB | Fastest (recommended) |
-| Medium | 1.5B | ~8GB | Better quality |
-| Large | 3.3B | ~16GB | Highest quality |
-
-### Device Support
-
-- **CUDA**: Best performance (if available)
-- **MPS**: Apple Silicon support
-- **CPU**: Fallback (slower)
-
-### Generation Limits
-
-- **Duration**: 1-30 seconds (MusicGen limitation)
-- **Sample Rate**: 32kHz (for memory efficiency)
-- **Channels**: Mono (configurable to stereo)
-
-## 🐳 Docker Deployment
-
-```bash
-# Development
-make docker-up
-
-# Production build
-docker compose -f docker-compose.prod.yml up --build
-```
-
-## 🔧 Development Commands
-
-```bash
-# Setup & Installation
-make setup           # Initial setup
-make install-deps    # Install additional tools
-
-# Development
-make dev-all         # Start API + Frontend (recommended)
-make api            # API server only
-make web            # Frontend only
-
-# Testing & Maintenance
-make test           # Run all tests  
-make test-smoke     # Quick smoke tests
-make clean          # Clean generated files
-make build          # Production build
-
-# Docker
-make docker-up      # Start with Docker
-make docker-down    # Stop containers
-
-# Help
-make help           # Show all commands
-```
-
-## 🎨 Ghost Studio Presets
-
-Built-in music style presets:
-
-- **🎸 Latin Rock**: Energetic guitars and percussion
-- **🎤 Trap 808**: Heavy trap beats with dark atmosphere  
-- **🎬 Ambient Cinematic**: Orchestral atmospheric soundscapes
-- **🌆 Synthwave Retro**: 80s inspired electronic music
-- **🎷 Jazz Fusion**: Complex jazz with electric instruments
-
-## 🎤 Maqueta → Production Workflow
-
-Son1k v3.0 introduces revolutionary **demo-to-production** capability that analyzes your rough recordings and generates professional-quality productions.
-
-### How It Works
-
-#### 1. Audio Analysis Engine
-- **Tempo Detection**: Robust BPM estimation with onset-based fallback
-- **Key Detection**: Krumhansl-Schmuckler key profiling with chromagram analysis  
-- **Energy Structure**: RMS-based energy curve with verse/chorus section detection
-- **Vocal Detection**: Spectral centroid + MFCC + zero-crossing rate analysis
-- **Musical Characteristics**: Dynamic range, spectral rolloff, brightness analysis
-
-#### 2. Context-Aware AI Generation  
-Instead of generic prompts, the system builds intelligent prompts like:
-```
-"Using detected musical characteristics: tempo around 128 BPM, key of G major, 
-moderate energy, includes vocal elements. Transform this musical foundation into: 
-a polished pop anthem with modern production"
-```
-
-#### 3. Professional Audio Processing
-
-**SSL-Style 4-Band EQ:**
-- Low Shelf: +1.5dB @ 80Hz (warmth)
-- Mid 1 Peak: -1.0dB @ 400Hz, Q=1.0 (clarity)  
-- Mid 2 Peak: +1.5dB @ 3kHz, Q=0.8 (presence)
-- High Shelf: +1.0dB @ 8kHz (air)
-- High-pass: 20Hz (rumble removal)
-
-**Melodyne-like Pitch Correction:**
-- YIN algorithm fundamental frequency detection
-- Scale-aware pitch correction to detected key  
-- Formant preservation (with pyrubberband)
-- Configurable correction strength
-
-**Neve Console Saturation:**
-- 4x oversampling for alias-free processing
-- Asymmetric tanh + harmonic enhancement
-- 2nd/3rd harmonic generation  
-- Pre/post console EQ characteristics
-
-**Mastering Chain:**
-- LUFS loudness normalization (pyloudnorm)
-- Brick-wall limiting with lookahead
-- Professional fade curves
-
-#### 4. A/B Comparison Interface
-- Side-by-side demo vs production players
-- Analysis metadata display
-- Processing chain transparency  
-- Session management with unique IDs
-
-### API Usage
-
-```bash
-# Upload maqueta and generate production
-curl -X POST http://localhost:8000/api/v1/ghost/maqueta \
-  -F "file=@my_demo.wav" \
-  -F "prompt=transform into uplifting electronic music" \
-  -F "duration=15" \
-  -F "tune_amount=0.7" \
-  -F "lufs_target=-14"
-
-# Response includes analysis + production URLs
+### Maqueta Procesada
+```json
 {
   "ok": true,
-  "demo": {
-    "url": "/uploads/ghost/uuid/demo.wav",
-    "analysis": {
-      "tempo": {"bpm": 128.5},
-      "key_guess": {"root": "G", "scale": "major"},
-      "vocals": {"has_vocals": true, "vocal_probability": 0.85}
-    }
+  "session_id": "uuid",
+  "production_url": "/output/production_uuid.wav",
+  "analysis": {
+    "key": "C",
+    "tempo": 120.0,
+    "duration": 30.5,
+    "has_vocals": true,
+    "energy": 0.7
   },
-  "production": {
-    "url": "/output/ghost/uuid/production.wav", 
-    "post_metadata": {
-      "processing_chain": ["tuning", "ssl_eq", "neve_saturation", "lufs_normalization", "limiter", "fades"],
-      "lufs_gain_db": -2.3
-    }
-  },
-  "prompt_final": "Using detected characteristics: tempo 128 BPM, G major, vocals. Transform into: uplifting electronic music"
+  "processing_chain": [
+    "tuning", "ssl_eq", "neve_saturation", 
+    "lufs_normalization", "limiter", "fades"
+  ],
+  "processing_time": 45.2
 }
 ```
 
-### Supported Formats
-- **Input**: WAV, MP3, FLAC, AIFF, M4A (up to 100MB)
-- **Output**: 32kHz mono WAV (production ready)
-- **Duration**: 5-30 seconds (MusicGen limitation)
-
-### Performance Notes
-- **Analysis**: ~2-5 seconds (depending on file length)
-- **Generation**: ~15-45 seconds (first run downloads model)
-- **Processing**: ~3-8 seconds (depending on chain complexity)
-- **Total**: ~30-60 seconds end-to-end
-
-## 🔍 Troubleshooting
-
-### Model Download Issues
-
-```bash
-# Clear model cache
-make clean
-# Or via API
-curl -X DELETE http://localhost:8000/api/v1/cache
+### Job Status
+```json
+{
+  "job_id": "uuid",
+  "status": "processing" | "completed" | "failed",
+  "progress": 75,
+  "message": "Aplicando procesamiento profesional...",
+  "result": { /* resultado cuando completed */ }
+}
 ```
 
-### Memory Issues
+## Frontend
 
-- Use `musicgen-small` model (default)
-- Reduce duration to 5-10 seconds
-- Close other applications
+### Interfaz Moderna
+- **Tabs accesibles** con navegación por teclado
+- **Knobs expresivos** con soporte touch y ARIA
+- **Sistema de toasts** para notificaciones
+- **Responsive design** para móvil/desktop
+- **Soporte reduced motion** para accesibilidad
 
-### Audio Processing Issues
+### Componentes
+- **Maqueta → Production**: Upload y procesamiento
+- **Generación Manual**: Prompts y controles expresivos
+- **Ghost Studio**: Configuración del sistema
+- **Historial**: Creaciones anteriores
 
-**"librosa not found"**: 
+## Desarrollo
+
+### Estructura del Código
+```python
+# src/main.py - Punto de entrada
+from .audio_analysis import AudioAnalyzer
+from .audio_post import AudioPostProcessor
+
+# Flujo principal
+analyzer = AudioAnalyzer()
+processor = AudioPostProcessor()
+
+# Análisis → Generación → Post-procesamiento
+analysis = analyzer.analyze_audio_file(file_path)
+audio, metadata = musicgen_service.generate_music(prompt)
+processed, post_meta = processor.process_master(audio)
+```
+
+### Logs
 ```bash
-source .venv/bin/activate
+# Ver logs en tiempo real
+tail -f logs/son1k.log
+
+# Logs por nivel
+grep "ERROR" logs/son1k.log
+grep "INFO" logs/son1k.log
+```
+
+### Testing
+```bash
+# Test básico
+make test
+
+# Test manual via curl
+curl -X GET http://localhost:8000/health
+curl -X GET http://localhost:8000/api/v1/history
+```
+
+## Solución de Problemas
+
+### Dependencias Faltantes
+```bash
+# Si falla librosa
 pip install librosa
+
+# Si falla scipy
+pip install scipy
+
+# Instalación completa
+make install-full
 ```
 
-**"pyrubberband not available"**:
+### Puerto Ocupado
 ```bash
-# Install rubberband system dependency
-brew install rubberband
-# Then install Python wrapper
-pip install pyrubberband
+# Cambiar puerto
+PORT=8001 make dev
+
+# O editar Makefile
 ```
 
-**"pyloudnorm missing"**:
+### Permisos de Archivos
 ```bash
-pip install pyloudnorm
+# Crear directorios manualmente
+mkdir -p storage/{uploads,output}/{,ghost}
+chmod 755 storage -R
 ```
 
-### Maqueta Upload Issues
+### Audio No Se Reproduce
+- Verificar formato de archivo soportado
+- Comprobar que el archivo no esté corrupto
+- Revisar permisos de directorio `storage/output`
 
-**"File too large"**: Max 100MB per upload
-**"Unsupported format"**: Use WAV, MP3, FLAC, AIFF, or M4A
-**"Analysis failed"**: File may be corrupted or very short (< 0.5s)
+## Producción
 
-### Performance on Mac
-
-- **M1/M2**: Enable MPS acceleration automatically
-- **Intel**: Uses CPU (slower but works)
-- Monitor with Activity Monitor
-
-### Common Errors
-
-**"No module named 'src'"**: Run from project root
-**"CUDA not available"**: Normal on Mac, uses MPS/CPU
-**"Port 8000 in use"**: Kill process: `lsof -ti:8000 | xargs kill -9`
-**"Upload processing failed"**: Check file format and size
-
-## 📚 API Documentation
-
-- **Swagger UI**: http://localhost:8000/docs
-- **ReDoc**: http://localhost:8000/redoc
-- **Ghost Studio**: [docs/ghost_studio.md](docs/ghost_studio.md)
-
-### Key Endpoints
-
+### Variables de Entorno
 ```bash
-# Health
-GET /health
-
-# Manual Generation
-POST /api/v1/generate
-
-# Maqueta → Production (NEW!)
-POST /api/v1/ghost/maqueta     # Upload demo, generate production
-GET  /api/v1/ghost/sessions/{id}  # Session status
-DELETE /api/v1/ghost/sessions/{id}  # Delete session
-
-# Ghost Studio  
-GET  /api/v1/ghost/presets
-POST /api/v1/ghost/job
-GET  /api/v1/ghost/jobs
-GET  /api/v1/ghost/stats       # Usage statistics
-
-# Models & Cache
-GET    /api/v1/models
-DELETE /api/v1/cache
+export SON1K_ENV=production
+export SON1K_LOG_LEVEL=warning
+export SON1K_WORKERS=4
 ```
 
-## 🚀 Production Deployment
+### Nginx (Opcional)
+```nginx
+server {
+    listen 80;
+    server_name son1kvers3.com;
+    
+    location / {
+        proxy_pass http://localhost:8000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+    
+    location /uploads/ {
+        alias /path/to/son1k-fusion/storage/uploads/;
+    }
+    
+    location /output/ {
+        alias /path/to/son1k-fusion/storage/output/;
+    }
+}
+```
 
-1. **Environment**: Set production environment variables
-2. **Database**: Use PostgreSQL instead of SQLite
-3. **Reverse Proxy**: Nginx for static files and SSL
-4. **Process Manager**: PM2 or systemd for API
-5. **Monitoring**: Add logging and monitoring
-6. **Storage**: External storage for generated files
+## Contribuir
 
-## 🤝 Contributing
+### Código
+1. Fork del repositorio
+2. Crear rama feature
+3. Desarrollar con tests
+4. Pull request
 
-1. Fork the repository
-2. Create feature branch: `git checkout -b feature/amazing-feature`
-3. Run tests: `make test`
-4. Commit changes: `git commit -m 'Add amazing feature'`
-5. Push branch: `git push origin feature/amazing-feature`
-6. Open Pull Request
+### Issues
+- Reportar bugs en GitHub Issues
+- Incluir logs relevantes
+- Especificar sistema operativo
 
-## 📜 License
+## Licencia
 
-MIT License - see [LICENSE](LICENSE) file.
+MIT License - Democratización musical para todos
 
-## 🙏 Credits
+## Contacto
 
-- **MusicGen**: Facebook Research
-- **Transformers**: Hugging Face
-- **FastAPI**: Sebastián Ramirez
-- **React**: Meta
+- **Proyecto**: Son1kVers3
+- **Filosofía**: "Resistencia Sonora"
+- **Objetivo**: 400M+ hispanohablantes con acceso a producción musical
 
 ---
 
-**Built with ❤️ by the Son1k Team**
-
-For more details, check out the [Ghost Studio documentation](docs/ghost_studio.md) and explore the API at http://localhost:8000/docs
+**¡Que la música fluya libre!** 🎵

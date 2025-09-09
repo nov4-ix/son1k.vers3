@@ -1,30 +1,60 @@
-# === CORE BACKEND STACK ===
-fastapi
-uvicorn[standard]
-sqlalchemy
-pydantic
-pydantic-settings
-python-jose[cryptography]
-passlib[bcrypt]
-pytest
+# Son1kVers3 - Dependencias Completas
+# Core API
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+python-multipart==0.0.6
 
-# === AUDIO STACK ===
-torch==2.2.2
-torchaudio==2.2.2
-transformers>=4.37
-accelerate
-sentencepiece
-soundfile
-einops
-ffmpeg-python
+# Audio Processing Core (OBLIGATORIAS)
+numpy==1.24.3
+soundfile==0.12.1
 
-# === AUDIO ANALYSIS & PROCESSING ===
-numpy
-scipy
-librosa
-pyloudnorm
-pyrubberband
+# Audio Analysis Professional (OPCIONALES - con graceful fallback)
+librosa==0.10.1
+scipy==1.11.4
 
-# === UTILITIES ===
-python-multipart
-aiofiles
+# Audio Post-processing Professional (OPCIONALES)
+pyloudnorm==0.1.1
+pyrubberband==0.3.0
+
+# Utilities
+pydantic==2.5.0
+python-dotenv==1.0.0
+pathlib==1.0.1
+
+# Development & Testing
+pytest==7.4.3
+pytest-asyncio==0.21.1
+
+# Production (Optional)
+gunicorn==21.2.0
+celery==5.3.4
+redis==5.0.1
+
+# Security
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+
+# Monitoring
+psutil==5.9.6
+
+# Machine Learning (OPTIONAL - solo si quieres usar modelos reales)
+torch==2.1.0
+torchaudio==0.16.0
+transformers==4.35.0
+
+# ================================
+# NOTAS IMPORTANTES:
+# ================================
+# 1. OBLIGATORIAS: fastapi, uvicorn, numpy, soundfile
+# 2. OPCIONALES: librosa, scipy, pyloudnorm, pyrubberband
+#    - Si faltan, el sistema usa graceful fallback
+#    - El análisis básico funcionará sin estas
+# 3. MACHINE LEARNING: torch, transformers
+#    - Solo necesario para modelos reales de MusicGen
+#    - El sistema actual funciona con síntesis sintética
+
+# Instalación mínima:
+# pip install fastapi uvicorn numpy soundfile python-multipart pydantic
+
+# Instalación completa:
+# pip install -r requirements.txt
