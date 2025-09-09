@@ -3,7 +3,10 @@ WORKDIR /app
 
 # System deps for cryptography/bcrypt if needed
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \    libffi-dev \    libssl-dev \    && rm -rf /var/lib/apt/lists/*
+    build-essential \
+    libffi-dev \
+    libssl-dev \
+    && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt

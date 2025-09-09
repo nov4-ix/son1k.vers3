@@ -76,10 +76,9 @@ test:
 	bash -lc 'source .venv/bin/activate && python -m pytest tests/ -v'
 
 test-smoke:
-	@echo "🔥 Running smoke tests..."
-	bash -lc 'source .venv/bin/activate && python -m pytest tests/test_api.py::test_health -v'
-	bash -lc 'source .venv/bin/activate && python -m pytest tests/test_api.py::test_generate_smoke -v'
-	bash -lc 'source .venv/bin/activate && python -m pytest tests/test_api.py::test_ghost_studio_smoke -v'
+        @echo "🔥 Running smoke tests..."
+        bash -lc 'source .venv/bin/activate && python -m pytest tests/test_api.py::test_health -v'
+        bash -lc 'source .venv/bin/activate && python -m pytest tests/test_api.py::test_generate_smoke -v'
 
 # Clean up generated files and cache
 clean:

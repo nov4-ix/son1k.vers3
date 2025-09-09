@@ -253,7 +253,7 @@ print(f'LUFS gain: {meta[\"lufs_gain_db\"]:.1f}dB')
 ### **Creadores de Contenido:**
 - Jingles caseros → versiones broadcast-ready
 - Ideas musicales → tracks terminados para videos
-- Rapid prototyping musical
+- Rapid musical prototyping
 
 ---
 

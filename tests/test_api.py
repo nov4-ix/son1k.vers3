@@ -139,17 +139,14 @@ def test_ghost_maqueta_flow():
         assert len(production_response.content) > 0
         
         # Step 5: Validate audio files can be read
-        try:
-            # Check that we can read the production file
-            session_id = result["session_id"]
-            production_path = OUTPUT_DIR / "ghost" / session_id / production["filename"]
-            if production_path.exists():
-                audio_info = sf.info(production_path)
-                assert audio_info.samplerate > 0
-                assert audio_info.frames > 0
-                print(f"✅ Production file validated: {audio_info.frames} frames @ {audio_info.samplerate}Hz")
-        except Exception as e:
-            print(f"⚠️  Production file validation warning: {e}")
+        # Check that we can read the production file
+        session_id = result["session_id"]
+        production_path = OUTPUT_DIR / "ghost" / session_id / production["filename"]
+        assert production_path.exists(), f"Production file {production_path} not found"
+        audio_info = sf.info(production_path)
+        assert audio_info.samplerate > 0
+        assert audio_info.frames > 0
+        print(f"✅ Production file validated: {audio_info.frames} frames @ {audio_info.samplerate}Hz")
         
         print(f"✅ Maqueta workflow completed successfully!")
         print(f"   📊 Analysis: {demo['analysis']['tempo']['bpm']:.1f} BPM, {demo['analysis']['key_guess']['root']}{demo['analysis']['key_guess']['scale']}")
