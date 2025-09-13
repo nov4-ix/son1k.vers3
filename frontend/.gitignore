@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+env/
+ENV/
+
+# Audio files temporales
+storage/uploads/*
+storage/output/*
+!storage/uploads/.gitkeep
+!storage/output/.gitkeep
+
+# Sistema
+.DS_Store
+.vscode/
+*.log
+*.tmp
+
+# Node modules (si usas)
+node_modules/
+
+# Archivos grandes
+*.dylib
+*.so.*
