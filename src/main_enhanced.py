@@ -474,6 +474,20 @@ try:
     app.mount("/output", StaticFiles(directory=settings.OUTPUT_DIR), name="output")
     app.mount("/vocals", StaticFiles(directory=settings.VOCALS_DIR), name="vocals")
     app.mount("/uploads", StaticFiles(directory=settings.UPLOADS_DIR), name="uploads")
+    
+    # Mount frontend assets
+    project_root = Path(__file__).parent.parent
+    assets_dir = project_root / "assets"
+    if assets_dir.exists():
+        app.mount("/assets", StaticFiles(directory=str(assets_dir)), name="assets")
+        logger.info(f"Mounted assets directory: {assets_dir}")
+    
+    # Mount frontend directory if it exists
+    frontend_dir = project_root / "frontend"
+    if frontend_dir.exists():
+        app.mount("/frontend", StaticFiles(directory=str(frontend_dir)), name="frontend")
+        logger.info(f"Mounted frontend directory: {frontend_dir}")
+        
 except Exception as e:
     logger.warning(f"Could not mount static files: {e}")
 
@@ -482,14 +496,19 @@ except Exception as e:
 @app.get("/", response_class=HTMLResponse)
 async def enhanced_root():
     """Serve enhanced frontend"""
+    # Define paths relative to the project root
+    project_root = Path(__file__).parent.parent  # Go up from src/ to project root
     frontend_paths = [
-        Path("index.html"),
-        Path("frontend") / "index.html"
+        project_root / "index.html",  # Main frontend file
+        project_root / "frontend" / "index.html",  # Alternative location
+        Path("index.html"),  # Fallback to current directory
+        Path("frontend") / "index.html"  # Original fallback
     ]
     
     for path in frontend_paths:
         if path.exists():
             try:
+                logger.info(f"Serving frontend from: {path}")
                 return HTMLResponse(content=path.read_text(encoding='utf-8'))
             except Exception as e:
                 logger.warning(f"Error reading {path}: {e}")
@@ -589,6 +608,24 @@ async def enhanced_root():
     </body>
     </html>
     """)
+
+@app.get("/favicon.ico")
+async def favicon():
+    """Serve favicon - check common locations"""
+    project_root = Path(__file__).parent.parent
+    favicon_paths = [
+        project_root / "assets" / "logo.png",  # Use logo as favicon
+        project_root / "favicon.ico",
+        project_root / "assets" / "favicon.ico"
+    ]
+    
+    for path in favicon_paths:
+        if path.exists():
+            from fastapi.responses import FileResponse
+            return FileResponse(str(path))
+    
+    # Return empty response if no favicon found
+    return JSONResponse(content={}, status_code=204)
 
 @app.get("/health")
 async def enhanced_health():
