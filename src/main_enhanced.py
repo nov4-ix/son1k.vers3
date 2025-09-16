@@ -83,11 +83,22 @@ from .lyrics_ai import (
     EmotionalArc,
     create_lyrics_ai
 )
+from .suno_generation import (
+    SunoGenerationService,
+    SunoGenerationRequest,
+    GenerationMode,
+    get_suno_generation_service,
+    start_suno_service,
+    stop_suno_service,
+    generate_music_async,
+    get_generation_status
+)
 
 # Global AI services
 style_transfer_ai = None
 musical_analyzer = None
 lyrics_ai = None
+suno_service = None
 
 # Original modules fallback
 try:
@@ -216,10 +227,11 @@ class EnhancedAIService:
         self.suno_client = get_suno_client() if settings.ENABLE_SUNO else None
         
         # Initialize new AI services
-        global style_transfer_ai, musical_analyzer, lyrics_ai
+        global style_transfer_ai, musical_analyzer, lyrics_ai, suno_service
         style_transfer_ai = create_style_transfer_ai()
         musical_analyzer = ComprehensiveMusicalAnalyzer()
         lyrics_ai = create_lyrics_ai()
+        suno_service = get_suno_generation_service()
         
         logger.info("Enhanced AI Service initialized")
         logger.info(f"  - Intelligent Generation: ✓")
@@ -230,6 +242,7 @@ class EnhancedAIService:
         logger.info(f"  - Style Transfer AI: {'✓ (Advanced)' if ADVANCED_STYLE_TRANSFER else '✓ (Simple)'}")
         logger.info(f"  - Musical Analysis: {'✓ (Advanced)' if ADVANCED_MUSICAL_ANALYSIS else '✓ (Simple)'}")
         logger.info(f"  - Advanced Lyrics AI: ✓")
+        logger.info(f"  - Suno Generation Service: ✓")
     
     async def generate_enhanced_music(self, request: EnhancedGenerateRequest) -> GenerationResult:
         """Generate music with full AI enhancement pipeline"""
@@ -423,12 +436,21 @@ async def enhanced_lifespan(app: FastAPI):
     logger.info("🚀 Iniciando Son1kVers3 Enhanced...")
     setup_enhanced_directories()
     setup_services()
+    
+    # Start Suno generation service
+    await start_suno_service()
+    logger.info("🎵 Suno Generation Service iniciado")
+    
     logger.info("✅ Son1kVers3 Enhanced listo - AI Completo Activado")
     
     yield
     
     # Shutdown
     logger.info("🛑 Cerrando Son1kVers3 Enhanced...")
+    
+    # Stop Suno generation service
+    await stop_suno_service()
+    logger.info("🎵 Suno Generation Service detenido")
 
 # Create enhanced application
 app = FastAPI(
@@ -1184,6 +1206,131 @@ async def get_extended_capabilities():
     except Exception as e:
         logger.error(f"Error getting extended capabilities: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+# === SUNO MUSIC GENERATION ENDPOINTS ===
+
+@app.post("/api/v2/generate/suno")
+async def generate_with_suno(request: SunoGenerationRequest):
+    """Generate music using Suno AI with advanced controls"""
+    try:
+        # Validate the request
+        if not request.prompt and not request.lyrics and request.mode != GenerationMode.PROMPTLESS:
+            raise HTTPException(status_code=400, detail="Either prompt or lyrics required (unless using promptless mode)")
+        
+        # Validate parameter ranges
+        if not (0.0 <= request.expressiveness <= 2.0):
+            raise HTTPException(status_code=400, detail="Expressiveness must be between 0.0 and 2.0")
+        if not (0.0 <= request.production_quality <= 2.0):
+            raise HTTPException(status_code=400, detail="Production quality must be between 0.0 and 2.0")
+        if not (0.0 <= request.creativity <= 2.0):
+            raise HTTPException(status_code=400, detail="Creativity must be between 0.0 and 2.0")
+        
+        # Generate music asynchronously
+        job_id = await generate_music_async(request)
+        
+        logger.info(f"Suno music generation started - Job ID: {job_id}")
+        
+        return {
+            "success": True,
+            "job_id": job_id,
+            "message": "Music generation started",
+            "estimated_time": f"{request.length_sec + 30} seconds",
+            "status_endpoint": f"/api/v2/generate/suno/status/{job_id}"
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Suno generation failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Generation failed: {str(e)}")
+
+@app.get("/api/v2/generate/suno/status/{job_id}")
+async def get_suno_generation_status(job_id: str):
+    """Get the status of a Suno music generation job"""
+    try:
+        status = await get_generation_status(job_id)
+        
+        if not status:
+            raise HTTPException(status_code=404, detail="Job not found")
+        
+        response = {
+            "job_id": job_id,
+            "status": status.status.value,
+            "progress": status.progress,
+            "message": status.message,
+            "created_at": status.created_at.isoformat(),
+            "updated_at": status.updated_at.isoformat() if status.updated_at else None
+        }
+        
+        # Add result data if completed successfully
+        if status.status == JobStatus.COMPLETED and status.result:
+            response["result"] = {
+                "audio_url": status.result.get("audio_url"),
+                "file_path": status.result.get("file_path"),
+                "metadata": status.result.get("metadata", {}),
+                "duration": status.result.get("duration"),
+                "file_size": status.result.get("file_size")
+            }
+        
+        # Add error details if failed
+        if status.status == JobStatus.FAILED and status.error:
+            response["error"] = status.error
+        
+        return response
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to get job status: {e}")
+        raise HTTPException(status_code=500, detail=f"Status check failed: {str(e)}")
+
+@app.get("/api/v2/generate/suno/queue")
+async def get_suno_queue_status():
+    """Get the current status of the Suno generation queue"""
+    try:
+        if not suno_service:
+            raise HTTPException(status_code=503, detail="Suno service not available")
+        
+        queue_status = suno_service.get_queue_status()
+        
+        return {
+            "queue_size": queue_status["total_jobs"],
+            "pending": queue_status["pending_jobs"],
+            "processing": queue_status["processing_jobs"], 
+            "completed_today": queue_status["completed_today"],
+            "failed_today": queue_status["failed_today"],
+            "average_processing_time": queue_status.get("avg_processing_time", 0),
+            "service_healthy": queue_status["service_healthy"],
+            "last_update": datetime.now().isoformat()
+        }
+        
+    except Exception as e:
+        logger.error(f"Failed to get queue status: {e}")
+        raise HTTPException(status_code=500, detail=f"Queue status failed: {str(e)}")
+
+@app.delete("/api/v2/generate/suno/{job_id}")
+async def cancel_suno_generation(job_id: str):
+    """Cancel a pending Suno music generation job"""
+    try:
+        if not suno_service:
+            raise HTTPException(status_code=503, detail="Suno service not available")
+        
+        success = await suno_service.cancel_job(job_id)
+        
+        if not success:
+            raise HTTPException(status_code=404, detail="Job not found or cannot be cancelled")
+        
+        return {
+            "success": True,
+            "job_id": job_id,
+            "message": "Job cancelled successfully"
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to cancel job {job_id}: {e}")
+        raise HTTPException(status_code=500, detail=f"Job cancellation failed: {str(e)}")
 
 # === ERROR HANDLERS ===
 

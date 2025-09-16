@@ -28,3 +28,11 @@ pyrubberband
 # === UTILITIES ===
 python-multipart
 aiofiles
+
+# === QUEUE & ASYNC PROCESSING ===
+celery
+redis
+asyncio-mqtt
+
+# === WEBSOCKETS FOR REAL-TIME UPDATES ===
+websockets

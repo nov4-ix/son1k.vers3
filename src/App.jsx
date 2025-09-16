@@ -102,7 +102,7 @@ export default function App() {
   // UI state
   const [health, setHealth] = useState(null);
   const [toast, setToast] = useState(null);
-  const [activeTab, setActiveTab] = useState('maqueta'); // 'maqueta' | 'ghost' | 'manual'
+  const [activeTab, setActiveTab] = useState('maqueta'); // 'maqueta' | 'ghost' | 'manual' | 'suno'
   
   // Loading states
   const [loading, setLoading] = useState({
@@ -147,6 +147,20 @@ export default function App() {
   const [gTopP, setGTopP] = useState(0.0);
   const [gSeed, setGSeed] = useState('');
   const [gUrl, setGUrl] = useState("");
+
+  // Suno generation state
+  const [sunoPrompt, setSunoPrompt] = useState("energetic electronic music with driving beat");
+  const [sunoLyrics, setSunoLyrics] = useState("");
+  const [sunoStyle, setSunoStyle] = useState("");
+  const [sunoDuration, setSunoDuration] = useState(60);
+  const [sunoMode, setSunoMode] = useState("original"); // "original" | "promptless"
+  const [sunoExpressiveness, setSunoExpressiveness] = useState(1.0);
+  const [sunoProduction, setSunoProduction] = useState(1.0);
+  const [sunoCreativity, setSunoCreativity] = useState(1.0);
+  const [sunoJobId, setSunoJobId] = useState("");
+  const [sunoJobStatus, setSunoJobStatus] = useState(null);
+  const [sunoResult, setSunoResult] = useState(null);
+  const [sunoPolling, setSunoPolling] = useState(false);
 
   const showToast = useCallback((message, type = 'info') => {
     setToast({ message, type });
@@ -278,6 +292,76 @@ export default function App() {
       setLoadingState('generate', false);
     }
   };
+
+  const generateWithSuno = async () => {
+    setLoadingState('generate', true);
+    setSunoJobId('');
+    setSunoJobStatus(null);
+    setSunoResult(null);
+    
+    try {
+      const payload = {
+        prompt: sunoMode === 'original' ? sunoPrompt : null,
+        lyrics: sunoMode === 'original' ? sunoLyrics : null,
+        style: sunoMode === 'original' ? sunoStyle : null,
+        length_sec: sunoDuration,
+        mode: sunoMode,
+        expressiveness: sunoExpressiveness,
+        production_quality: sunoProduction,
+        creativity: sunoCreativity
+      };
+
+      const res = await fetch(`${API}/api/v2/generate/suno`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      
+      const data = await res.json();
+      if (res.ok) {
+        setSunoJobId(data.job_id);
+        setSunoPolling(true);
+        showToast(`Suno AI generation started! Job ID: ${data.job_id}`, 'success');
+      } else {
+        throw new Error(data.detail || 'Generation failed');
+      }
+    } catch (error) {
+      showToast(`Error: ${error.message}`, 'error');
+    } finally {
+      setLoadingState('generate', false);
+    }
+  };
+
+  const checkSunoJobStatus = async (jobId) => {
+    try {
+      const res = await fetch(`${API}/api/v2/generate/suno/status/${jobId}`);
+      const data = await res.json();
+      
+      if (res.ok) {
+        setSunoJobStatus(data);
+        
+        if (data.status === 'completed') {
+          setSunoResult(data.result);
+          setSunoPolling(false);
+          showToast('Suno AI generation completed! 🎵', 'success');
+        } else if (data.status === 'failed') {
+          setSunoPolling(false);
+          showToast(`Generation failed: ${data.error || 'Unknown error'}`, 'error');
+        }
+      }
+    } catch (error) {
+      console.error('Error checking job status:', error);
+    }
+  };
+
+  // Auto-refresh Suno job status when polling is enabled
+  useEffect(() => {
+    let interval;
+    if (sunoPolling && sunoJobId) {
+      interval = setInterval(() => checkSunoJobStatus(sunoJobId), 3000);
+    }
+    return () => clearInterval(interval);
+  }, [sunoPolling, sunoJobId]);
 
   const checkHealth = async () => {
     setLoadingState('health', true);
@@ -465,6 +549,20 @@ export default function App() {
                 }}
               >
                 🎛️ Manual Generation
+              </button>
+              <button
+                onClick={() => setActiveTab('suno')}
+                style={{
+                  flex: 1,
+                  padding: '16px 24px',
+                  border: 'none',
+                  background: activeTab === 'suno' ? themeColors.primary : 'transparent',
+                  color: activeTab === 'suno' ? 'white' : themeColors.text,
+                  fontWeight: 600,
+                  cursor: 'pointer'
+                }}
+              >
+                🎵 Suno AI
               </button>
             </div>
 
@@ -1170,6 +1268,367 @@ export default function App() {
                         controls 
                         style={{ width: '100%' }} 
                       />
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Suno AI Generation Tab */}
+              {activeTab === 'suno' && (
+                <div>
+                  <h3 style={{ margin: '0 0 20px 0', fontSize: '18px' }}>
+                    🎵 Suno AI Music Generation
+                  </h3>
+                  <p style={{ color: themeColors.textSecondary, marginBottom: 24 }}>
+                    Generate complete songs with lyrics, vocals, and professional arrangement using Suno AI technology.
+                  </p>
+
+                  {/* Generation Mode */}
+                  <div style={{ marginBottom: 24 }}>
+                    <label style={{ 
+                      display: 'block', 
+                      marginBottom: 8, 
+                      fontWeight: 600,
+                      color: themeColors.text 
+                    }}>
+                      🎯 Generation Mode
+                    </label>
+                    <div style={{ display: 'flex', gap: 12 }}>
+                      <button
+                        onClick={() => setSunoMode('original')}
+                        style={{
+                          background: sunoMode === 'original' ? themeColors.primary : 'transparent',
+                          color: sunoMode === 'original' ? 'white' : themeColors.text,
+                          border: `1px solid ${themeColors.border}`,
+                          padding: '8px 16px',
+                          borderRadius: 6,
+                          fontSize: '14px',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        🎼 Original (with prompt/lyrics)
+                      </button>
+                      <button
+                        onClick={() => setSunoMode('promptless')}
+                        style={{
+                          background: sunoMode === 'promptless' ? themeColors.primary : 'transparent',
+                          color: sunoMode === 'promptless' ? 'white' : themeColors.text,
+                          border: `1px solid ${themeColors.border}`,
+                          padding: '8px 16px',
+                          borderRadius: 6,
+                          fontSize: '14px',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        🎲 Promptless (surprise me)
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Prompt/Lyrics Input */}
+                  {sunoMode === 'original' && (
+                    <>
+                      <div style={{ marginBottom: 20 }}>
+                        <label style={{ 
+                          display: 'block', 
+                          marginBottom: 8, 
+                          fontWeight: 600,
+                          color: themeColors.text 
+                        }}>
+                          🎼 Music Description/Prompt
+                        </label>
+                        <textarea
+                          value={sunoPrompt}
+                          onChange={(e) => setSunoPrompt(e.target.value)}
+                          placeholder="Describe the music you want (e.g., 'energetic rock ballad with electric guitars, emotional vocals, 120 BPM')"
+                          style={{
+                            width: '100%',
+                            padding: 12,
+                            borderRadius: 8,
+                            border: `1px solid ${themeColors.border}`,
+                            background: themeColors.surface,
+                            color: themeColors.text,
+                            resize: 'vertical',
+                            minHeight: 80,
+                            fontSize: 14
+                          }}
+                        />
+                      </div>
+
+                      <div style={{ marginBottom: 20 }}>
+                        <label style={{ 
+                          display: 'block', 
+                          marginBottom: 8, 
+                          fontWeight: 600,
+                          color: themeColors.text 
+                        }}>
+                          📝 Lyrics (Optional)
+                        </label>
+                        <textarea
+                          value={sunoLyrics}
+                          onChange={(e) => setSunoLyrics(e.target.value)}
+                          placeholder="Enter song lyrics here, or leave empty for instrumental..."
+                          style={{
+                            width: '100%',
+                            padding: 12,
+                            borderRadius: 8,
+                            border: `1px solid ${themeColors.border}`,
+                            background: themeColors.surface,
+                            color: themeColors.text,
+                            resize: 'vertical',
+                            minHeight: 120,
+                            fontSize: 14
+                          }}
+                        />
+                      </div>
+
+                      <div style={{ marginBottom: 20 }}>
+                        <label style={{ 
+                          display: 'block', 
+                          marginBottom: 8, 
+                          fontWeight: 600,
+                          color: themeColors.text 
+                        }}>
+                          🎨 Style/Genre (Optional)
+                        </label>
+                        <input
+                          type="text"
+                          value={sunoStyle}
+                          onChange={(e) => setSunoStyle(e.target.value)}
+                          placeholder="e.g., 'pop rock', 'jazz fusion', 'electronic ambient'"
+                          style={{
+                            width: '100%',
+                            padding: 12,
+                            borderRadius: 8,
+                            border: `1px solid ${themeColors.border}`,
+                            background: themeColors.surface,
+                            color: themeColors.text,
+                            fontSize: 14
+                          }}
+                        />
+                      </div>
+                    </>
+                  )}
+
+                  {/* Duration Setting */}
+                  <div style={{ marginBottom: 24 }}>
+                    <label style={{ 
+                      display: 'block', 
+                      marginBottom: 8, 
+                      fontWeight: 600,
+                      color: themeColors.text 
+                    }}>
+                      ⏱️ Duration: {sunoDuration} seconds
+                    </label>
+                    <input
+                      type="range"
+                      min="30"
+                      max="120"
+                      step="15"
+                      value={sunoDuration}
+                      onChange={(e) => setSunoDuration(parseInt(e.target.value))}
+                      style={{ width: '100%' }}
+                    />
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: themeColors.textSecondary, marginTop: 4 }}>
+                      <span>30s</span>
+                      <span>60s</span>
+                      <span>90s</span>
+                      <span>120s</span>
+                    </div>
+                  </div>
+
+                  {/* Advanced Creative Controls */}
+                  <div style={{ 
+                    background: darkMode ? '#374151' : '#f8fafc',
+                    padding: 20,
+                    borderRadius: 12,
+                    border: `1px solid ${themeColors.border}`,
+                    marginBottom: 24
+                  }}>
+                    <h4 style={{ margin: '0 0 16px 0', fontSize: '16px', color: themeColors.text }}>
+                      🎛️ Creative Controls
+                    </h4>
+                    
+                    {/* Expressiveness */}
+                    <div style={{ marginBottom: 20 }}>
+                      <label style={{ 
+                        display: 'block', 
+                        marginBottom: 8, 
+                        fontWeight: 600,
+                        color: themeColors.text,
+                        fontSize: '14px'
+                      }}>
+                        🎭 Expressiveness: {sunoExpressiveness.toFixed(1)}
+                        <span style={{ fontSize: '12px', fontWeight: 400, marginLeft: 8, color: themeColors.textSecondary }}>
+                          (0.0 = Minimal, 1.0 = Balanced, 2.0 = Maximum)
+                        </span>
+                      </label>
+                      <input
+                        type="range"
+                        min="0"
+                        max="2"
+                        step="0.1"
+                        value={sunoExpressiveness}
+                        onChange={(e) => setSunoExpressiveness(parseFloat(e.target.value))}
+                        style={{ width: '100%' }}
+                      />
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: themeColors.textSecondary, marginTop: 2 }}>
+                        <span>Subtle</span>
+                        <span>Natural</span>
+                        <span>Dramatic</span>
+                      </div>
+                    </div>
+
+                    {/* Production Quality */}
+                    <div style={{ marginBottom: 20 }}>
+                      <label style={{ 
+                        display: 'block', 
+                        marginBottom: 8, 
+                        fontWeight: 600,
+                        color: themeColors.text,
+                        fontSize: '14px'
+                      }}>
+                        🎚️ Production Quality: {sunoProduction.toFixed(1)}
+                        <span style={{ fontSize: '12px', fontWeight: 400, marginLeft: 8, color: themeColors.textSecondary }}>
+                          (0.0 = Raw, 1.0 = Professional, 2.0 = Studio Polish)
+                        </span>
+                      </label>
+                      <input
+                        type="range"
+                        min="0"
+                        max="2"
+                        step="0.1"
+                        value={sunoProduction}
+                        onChange={(e) => setSunoProduction(parseFloat(e.target.value))}
+                        style={{ width: '100%' }}
+                      />
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: themeColors.textSecondary, marginTop: 2 }}>
+                        <span>Demo</span>
+                        <span>Radio Ready</span>
+                        <span>Mastered</span>
+                      </div>
+                    </div>
+
+                    {/* Creativity */}
+                    <div style={{ marginBottom: 0 }}>
+                      <label style={{ 
+                        display: 'block', 
+                        marginBottom: 8, 
+                        fontWeight: 600,
+                        color: themeColors.text,
+                        fontSize: '14px'
+                      }}>
+                        🌈 Creativity: {sunoCreativity.toFixed(1)}
+                        <span style={{ fontSize: '12px', fontWeight: 400, marginLeft: 8, color: themeColors.textSecondary }}>
+                          (0.0 = Conservative, 1.0 = Innovative, 2.0 = Experimental)
+                        </span>
+                      </label>
+                      <input
+                        type="range"
+                        min="0"
+                        max="2"
+                        step="0.1"
+                        value={sunoCreativity}
+                        onChange={(e) => setSunoCreativity(parseFloat(e.target.value))}
+                        style={{ width: '100%' }}
+                      />
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: themeColors.textSecondary, marginTop: 2 }}>
+                        <span>Traditional</span>
+                        <span>Creative</span>
+                        <span>Avant-garde</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Generate Button */}
+                  <button
+                    onClick={generateWithSuno}
+                    disabled={loading.generate || (sunoMode === 'original' && !sunoPrompt.trim() && !sunoLyrics.trim())}
+                    style={{
+                      background: loading.generate ? themeColors.textSecondary : themeColors.primary,
+                      color: 'white',
+                      border: 'none',
+                      padding: '16px 32px',
+                      borderRadius: 8,
+                      fontSize: '16px',
+                      fontWeight: 700,
+                      cursor: loading.generate ? 'not-allowed' : 'pointer',
+                      marginBottom: 20,
+                      width: '100%'
+                    }}
+                  >
+                    {loading.generate ? "🎵 Generating with Suno AI..." : "🚀 Generate Music with Suno AI"}
+                  </button>
+
+                  {/* Job Status */}
+                  {sunoJobId && (
+                    <div style={{
+                      background: darkMode ? '#374151' : '#f0f9ff',
+                      padding: 20,
+                      borderRadius: 12,
+                      border: `1px solid ${themeColors.border}`,
+                      marginBottom: 20
+                    }}>
+                      <h4 style={{ margin: '0 0 12px 0', fontSize: '16px' }}>📊 Generation Status</h4>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
+                        <strong>Job ID:</strong> 
+                        <code style={{ background: themeColors.surface, padding: '2px 6px', borderRadius: 4, fontSize: '12px' }}>
+                          {sunoJobId}
+                        </code>
+                        {sunoJobStatus && <StatusBadge status={sunoJobStatus.status} />}
+                      </div>
+                      {sunoJobStatus && (
+                        <>
+                          <div style={{ marginBottom: 8 }}>
+                            <strong>Progress:</strong> {sunoJobStatus.progress}%
+                          </div>
+                          <div style={{ marginBottom: 8 }}>
+                            <strong>Message:</strong> {sunoJobStatus.message}
+                          </div>
+                          {sunoJobStatus.status === 'processing' && (
+                            <div style={{ 
+                              background: themeColors.primary,
+                              height: 4,
+                              borderRadius: 2,
+                              marginTop: 8
+                            }}>
+                              <div style={{
+                                background: themeColors.warning,
+                                height: '100%',
+                                borderRadius: 2,
+                                width: `${sunoJobStatus.progress}%`,
+                                transition: 'width 0.3s ease'
+                              }} />
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Generated Result */}
+                  {sunoResult && (
+                    <div style={{
+                      background: darkMode ? '#065f46' : '#ecfdf5',
+                      padding: 20,
+                      borderRadius: 12,
+                      border: `1px solid ${darkMode ? '#059669' : '#10b981'}`
+                    }}>
+                      <h4 style={{ margin: '0 0 12px 0', color: darkMode ? '#10b981' : '#065f46' }}>
+                        🎶 Generated Music Ready!
+                      </h4>
+                      <audio 
+                        src={sunoResult.audio_url} 
+                        controls 
+                        style={{ width: '100%', marginBottom: 12 }} 
+                      />
+                      {sunoResult.metadata && (
+                        <div style={{ fontSize: 14, color: themeColors.textSecondary }}>
+                          <div><strong>Duration:</strong> {sunoResult.duration}s</div>
+                          {sunoResult.metadata.title && <div><strong>Title:</strong> {sunoResult.metadata.title}</div>}
+                          {sunoResult.metadata.genre && <div><strong>Genre:</strong> {sunoResult.metadata.genre}</div>}
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
